@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "powerbi-visuals-utils-dataviewutils": "^6.1.0",
-    "powerbi-visuals-utils-formattingutils": "6.1.2"
+    "powerbi-visuals-utils-formattingutils": "6.1.2",
+    "powerbi-visuals-utils-onobjectutils": "^6.0.3"
   },
   "overrides": {
     "qs": "^6.16.0",

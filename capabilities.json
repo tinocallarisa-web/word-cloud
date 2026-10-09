@@ -237,6 +237,20 @@
             "bool": true
           }
         },
+        "italic": {
+          "displayName": "Italic",
+          "displayNameKey": "Prop_words_italic",
+          "type": {
+            "bool": true
+          }
+        },
+        "underline": {
+          "displayName": "Underline",
+          "displayNameKey": "Prop_words_underline",
+          "type": {
+            "bool": true
+          }
+        },
         "padding": {
           "displayName": "Spacing",
           "displayNameKey": "Prop_words_padding",
@@ -1068,5 +1082,7 @@
   "supportsEmptyDataView": true,
   "supportsKeyboardFocus": true,
   "supportsMultiVisualSelection": true,
-  "privileges": []
+  "privileges": [],
+  "supportsOnObjectFormatting": true,
+  "enablePointerEventsFormatMode": true
 }

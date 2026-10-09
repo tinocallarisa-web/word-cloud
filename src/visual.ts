@@ -3,6 +3,10 @@
 import powerbi from "powerbi-visuals-api";
 import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
 import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
+import {
+    HtmlSubSelectableClass, HtmlSubSelectionHelper, SubSelectableDisplayNameAttribute,
+    SubSelectableObjectNameAttribute, SubSelectableTypeAttribute,
+} from "powerbi-visuals-utils-onobjectutils";
 import { CloudLayout, LayoutWord, PlacedWord, ShapeMask, ShapeSpec } from "./layout";
 import { tokenize, detectLanguages } from "./text";
 import { ICONS } from "./icons";
@@ -23,7 +27,7 @@ const SVG = "http://www.w3.org/2000/svg";
 interface Settings {
     template: string;
     maxWords: number; minFont: number; maxFont: number; scale: string;
-    fontFamily: string; bold: boolean; padding: number; lowerCase: boolean; fit: boolean;
+    fontFamily: string; bold: boolean; italic: boolean; underline: boolean; padding: number; lowerCase: boolean; fit: boolean;
     autoLang: boolean; langEn: boolean; langEs: boolean; langPt: boolean; langFr: boolean; langDe: boolean; langIt: boolean;
     minLength: number; exclude: string; bigrams: boolean;
     orientation: string; verticalShare: number; fromAngle: number; toAngle: number; steps: number;
@@ -38,7 +42,7 @@ interface Settings {
 const DEFAULTS: Settings = {
     template: "clean",
     maxWords: 150, minFont: 10, maxFont: 64, scale: "sqrt",
-    fontFamily: "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif", bold: false, padding: 2, lowerCase: false, fit: true,
+    fontFamily: "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif", bold: false, italic: false, underline: false, padding: 2, lowerCase: false, fit: true,
     autoLang: true, langEn: true, langEs: false, langPt: false, langFr: false, langDe: false, langIt: false,
     minLength: 3, exclude: "", bigrams: false,
     orientation: "horizontal", verticalShare: 30, fromAngle: -45, toAngle: 45, steps: 3,
@@ -81,6 +85,7 @@ function readSettings(objects: Objects): Settings {
         maxWords: pick("words", "maxWords", "maxWords"), minFont: pick("words", "minFont", "minFont"),
         maxFont: pick("words", "maxFont", "maxFont"), scale: pick("words", "scale", "scale"),
         fontFamily: pick("words", "fontFamily", "fontFamily"), bold: pick("words", "bold", "bold"),
+        italic: pick("words", "italic", "italic"), underline: pick("words", "underline", "underline"),
         padding: pick("words", "padding", "padding"), lowerCase: pick("words", "lowerCase", "lowerCase"), fit: pick("words", "fit", "fit"),
         autoLang: pick("freeText", "autoLang", "autoLang"), langEn: pick("freeText", "langEn", "langEn"), langEs: pick("freeText", "langEs", "langEs"), langPt: pick("freeText", "langPt", "langPt"),
         langFr: pick("freeText", "langFr", "langFr"), langDe: pick("freeText", "langDe", "langDe"), langIt: pick("freeText", "langIt", "langIt"),
@@ -136,6 +141,10 @@ export class Visual implements IVisual {
     private images = new Map<string, Promise<HTMLImageElement | null>>();
     private maskCache: { key: string; mask: ShapeMask | null; hi: ShapeMask | null } | null = null;
     private dropped = 0;
+    /** Formato desde el lienzo (on-object): el clic selecciona qué formatear, no filtra datos. */
+    public visualOnObjectFormatting: powerbi.extensibility.visual.VisualOnObjectFormatting;
+    private subSelectionHelper: HtmlSubSelectionHelper;
+    private formatMode = false;
     /** Filas por bloques: Power BI entrega 30.000 cada vez; el visual pide las siguientes. */
     private lastFetchCount = 0;
     private fetchRounds = 0;
@@ -160,10 +169,21 @@ export class Visual implements IVisual {
         this.layout = new CloudLayout(document);
         this.injectStyles();
 
+        this.subSelectionHelper = HtmlSubSelectionHelper.createHtmlSubselectionHelper({
+            hostElement: options.element,
+            subSelectionService: options.host.subSelectionService,
+            selectionIdCallback: () => undefined,
+        });
+        this.visualOnObjectFormatting = {
+            getSubSelectionStyles: (subs) => this.getSubSelectionStyles(subs),
+            getSubSelectionShortcuts: (subs) => this.getSubSelectionShortcuts(subs),
+            getSubSelectables: (filter) => this.subSelectionHelper.getAllSubSelectables(filter),
+        };
+
         // Clic en el fondo: limpiar selección. Menú contextual también en vacío.
         this.svg.addEventListener("click", (e) => {
             if (e.target === this.svg || (e.target as Element).getAttribute?.("data-bg")) {
-                if (!this.canInteract) return;
+                if (!this.canInteract || this.formatMode) return;
                 this.selectionManager.clear().then(() => this.paintSelection());
             }
         });
@@ -214,6 +234,8 @@ export class Visual implements IVisual {
         try {
             const dv = options.dataViews?.[0];
             this.settings = readSettings(dv?.metadata?.objects);
+            this.formatMode = !!(options as any).formatMode;
+            this.subSelectionHelper.setFormatMode(this.formatMode);
             if (dv && this.streamSegments(options, dv)) {
                 // Se ha pedido el siguiente bloque: Power BI volverá a llamar a update() con
                 // todo junto. Dibujar ahora sería una nube parcial que se reemplaza enseguida.
@@ -232,13 +254,14 @@ export class Visual implements IVisual {
                 let p = this.images.get(src);
                 if (!p) { p = CloudLayout.loadImage(document, src); this.images.set(src, p); }
                 p.then(img => {
-                    if (token === this.updateToken) { this.render(options, img); this.warnings(dv); }
+                    if (token === this.updateToken) { this.render(options, img); this.warnings(dv); this.updateOutlines(options); }
                     this.events.renderingFinished(options);
                 }).catch(err => this.events.renderingFailed(options, String(err)));
                 return;
             }
             this.render(options, null);
             this.warnings(dv);
+            this.updateOutlines(options);
             this.events.renderingFinished(options);
         } catch (e) {
             this.events.renderingFailed(options, String(e));
@@ -287,6 +310,84 @@ export class Visual implements IVisual {
         }
         this.truncatedAt = loaded;
         return false;
+    }
+
+    // ── Formato desde el lienzo (on-object) ───────────────────────────────────
+
+    private subSelectable(el: Element, objectName: string, displayName: string, type: powerbi.visuals.SubSelectionStylesType): void {
+        if (!this.formatMode) return;
+        el.classList.add(HtmlSubSelectableClass);
+        el.setAttribute(SubSelectableObjectNameAttribute, objectName);
+        el.setAttribute(SubSelectableDisplayNameAttribute, displayName);
+        el.setAttribute(SubSelectableTypeAttribute, String(type));
+    }
+
+    private updateOutlines(options: VisualUpdateOptions): void {
+        if (!this.formatMode) return;
+        const subs = (options as any).subSelections as powerbi.visuals.CustomVisualSubSelection[] | undefined;
+        this.subSelectionHelper.updateOutlinesFromSubSelections(subs ?? [], true);
+    }
+
+    private getSubSelectionStyles(subs: powerbi.visuals.CustomVisualSubSelection[]): powerbi.visuals.SubSelectionStyles | undefined {
+        const name = subs[0]?.customVisualObjects[0]?.objectName;
+        const ref = (objectName: string, propertyName: string, label: string) => ({ reference: { objectName, propertyName }, label });
+        switch (name) {
+            case "words":
+                return {
+                    type: powerbi.visuals.SubSelectionStylesType.Text,
+                    fontFamily: ref("words", "fontFamily", this.t("Prop_words_fontFamily", "Font")),
+                    fontSize: ref("words", "maxFont", this.t("Prop_words_maxFont", "Largest font size")),
+                    bold: ref("words", "bold", this.t("Prop_words_bold", "Bold")),
+                    italic: ref("words", "italic", this.t("Prop_words_italic", "Italic")),
+                    underline: ref("words", "underline", this.t("Prop_words_underline", "Underline")),
+                    fontColor: ref("colors", "wordColor", this.t("Prop_colors_wordColor", "Word color")),
+                } as any;
+            case "layout":
+                return {
+                    type: powerbi.visuals.SubSelectionStylesType.Shape,
+                    fill: ref("layout", "silhouetteColor", this.t("Prop_layout_silhouetteColor", "Shape color")),
+                    stroke: ref("layout", "outlineColor", this.t("Prop_layout_outlineColor", "Border color")),
+                } as any;
+            case "background":
+                return {
+                    type: powerbi.visuals.SubSelectionStylesType.Shape,
+                    fill: ref("colors", "background", this.t("Prop_colors_background", "Background")),
+                } as any;
+        }
+        return undefined;
+    }
+
+    private getSubSelectionShortcuts(subs: powerbi.visuals.CustomVisualSubSelection[]): powerbi.visuals.VisualSubSelectionShortcuts | undefined {
+        const name = subs[0]?.customVisualObjects[0]?.objectName;
+        const id = (objectName: string, propertyName: string) => ({ objectName, propertyName });
+        const nav = (card: string, label: string) => ({ type: powerbi.visuals.VisualShortcutType.Navigate, destinationInfo: { cardUid: "Visual-" + card + "_card" }, label });
+        switch (name) {
+            case "words":
+                return [
+                    { type: powerbi.visuals.VisualShortcutType.Picker, ...id("orientation", "mode"), label: this.t("Obj_orientation", "Orientation") },
+                    { type: powerbi.visuals.VisualShortcutType.Picker, ...id("colors", "palette"), label: this.t("Prop_colors_palette", "Palette") },
+                    { type: powerbi.visuals.VisualShortcutType.Divider },
+                    { type: powerbi.visuals.VisualShortcutType.Reset, relatedResetFormattingIds: [id("words", "fontFamily"), id("words", "maxFont"), id("words", "bold"),
+                        id("words", "italic"), id("words", "underline"), id("colors", "wordColor"), id("orientation", "mode"), id("colors", "palette")] },
+                    nav("words", this.t("Obj_words", "Words")),
+                ] as any;
+            case "layout":
+                return [
+                    { type: powerbi.visuals.VisualShortcutType.Picker, ...id("layout", "shape"), label: this.t("Prop_layout_shape", "Shape") },
+                    { type: powerbi.visuals.VisualShortcutType.Toggle, ...id("layout", "silhouette"), relatedToggledFormattingIds: [id("layout", "silhouette")],
+                        disabledLabel: this.t("UI_HideShape", "Hide shape"), enabledLabel: this.t("UI_ShowShape", "Show shape") },
+                    { type: powerbi.visuals.VisualShortcutType.Divider },
+                    { type: powerbi.visuals.VisualShortcutType.Reset, relatedResetFormattingIds: [id("layout", "silhouetteColor"), id("layout", "silhouetteOpacity"),
+                        id("layout", "outline"), id("layout", "outlineColor"), id("layout", "outlineWidth")] },
+                    nav("layout", this.t("Obj_layout", "Layout")),
+                ] as any;
+            case "background":
+                return [
+                    { type: powerbi.visuals.VisualShortcutType.Reset, relatedResetFormattingIds: [id("colors", "background")] },
+                    nav("colors", this.t("Obj_colors", "Colors")),
+                ] as any;
+        }
+        return undefined;
     }
 
     private maskSource(dv: DataView | undefined): string | null {
@@ -410,6 +511,8 @@ export class Visual implements IVisual {
         im.setAttribute("href", url); im.setAttribute("width", String(W)); im.setAttribute("height", String(H));
         im.setAttribute("opacity", String(opacity));
         im.setAttribute("pointer-events", "none"); im.setAttribute("aria-hidden", "true");
+        // En el menú de selección del modo de formato (no recibe clics: taparía las palabras).
+        this.subSelectable(im, "layout", this.t("Prop_layout_shape", "Shape"), powerbi.visuals.SubSelectionStylesType.Shape);
         this.svg.appendChild(im);
     }
 
@@ -429,6 +532,7 @@ export class Visual implements IVisual {
         const bgRect = document.createElementNS(SVG, "rect");
         bgRect.setAttribute("width", String(W)); bgRect.setAttribute("height", String(H));
         bgRect.setAttribute("fill", bg || "transparent"); bgRect.setAttribute("data-bg", "1");
+        this.subSelectable(bgRect, "background", this.t("Prop_colors_background", "Background"), powerbi.visuals.SubSelectionStylesType.Shape);
         svg.appendChild(bgRect);
 
         const palette = paletteById(s.palette);
@@ -485,7 +589,8 @@ export class Visual implements IVisual {
                 size: Math.max(4, (minFont0 + (hi > lo ? (f(Math.max(0, w.weight)) - lo) / (hi - lo) : 1) * (maxFont0 - minFont0)) * factor),
             }));
             result = this.layout.run(lw, {
-                width: W, height: H, fontFamily: family, fontWeight: weight, padding: clamp(s.padding, 0, 20),
+                // La cursiva cambia el ancho: el motor mide con la misma fuente que se dibuja.
+                width: W, height: H, fontFamily: family, fontWeight: (s.italic ? "italic " : "") + weight, padding: clamp(s.padding, 0, 20),
                 angles, jitter: clamp(s.jitter, 0, 100) / 100, seed: Math.round(s.seed) || 0,
                 mask, timeBudgetMs: 900,
                 // El relleno va del tamaño de la palabra más pequeña hacia abajo, sin bajar del mínimo legible.
@@ -524,6 +629,8 @@ export class Visual implements IVisual {
         this.lastKey = key;
 
         const g = document.createElementNS(SVG, "g");
+        // Todas las palabras son un único objeto de texto para el formato desde el lienzo.
+        this.subSelectable(g, "words", this.t("Obj_words", "Words"), powerbi.visuals.SubSelectionStylesType.Text);
         svg.appendChild(g);
         // Primero el relleno (debajo); luego las palabras de los datos, de la más importante a la menos.
         const repeats = this.placed.filter(p => p.repeat);
@@ -538,6 +645,8 @@ export class Visual implements IVisual {
             el.setAttribute("font-size", String(p.size));
             el.setAttribute("font-family", family);
             el.setAttribute("font-weight", weight);
+            if (s.italic) el.setAttribute("font-style", "italic");
+            if (s.underline) el.setAttribute("text-decoration", "underline");
             el.setAttribute("fill", colorOf(w));
             if (p.rotate) el.setAttribute("transform", "rotate(" + p.rotate + " " + p.x + " " + p.y + ")");
             if (p.repeat) {
@@ -591,6 +700,7 @@ export class Visual implements IVisual {
 
     private wire(el: SVGTextElement, w: WordDatum, rank: number, total: number, repeat = false): void {
         el.addEventListener("click", (e) => {
+            if (this.formatMode) return;           // el clic es para el formato desde el lienzo
             e.stopPropagation();
             this.keyboardNav = false;
             this.select(w, e.ctrlKey || e.metaKey);
@@ -744,6 +854,8 @@ export class Visual implements IVisual {
                     dd("words", "scale", "Size scale", s.scale, [["linear", "Enum_scale_linear", "Linear"], ["sqrt", "Enum_scale_sqrt", "Square root"], ["log", "Enum_scale_log", "Logarithmic"]]),
                     font("words", "fontFamily", "Font", s.fontFamily),
                     tog("words", "bold", "Bold", s.bold),
+                    tog("words", "italic", "Italic", s.italic),
+                    tog("words", "underline", "Underline", s.underline),
                     num("words", "padding", "Spacing", s.padding),
                     tog("words", "lowerCase", "Lower case", s.lowerCase),
                     tog("words", "fit", "Shrink to fit all words", s.fit),
