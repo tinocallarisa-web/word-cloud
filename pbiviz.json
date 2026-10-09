@@ -21,7 +21,17 @@
   "externalJS": [],
   "stringResources": [
     "stringResources/en-US/resources.resjson",
-    "stringResources/es-ES/resources.resjson"
+    "stringResources/es-ES/resources.resjson",
+    "stringResources/fr-FR/resources.resjson",
+    "stringResources/de-DE/resources.resjson",
+    "stringResources/it-IT/resources.resjson",
+    "stringResources/pt-BR/resources.resjson",
+    "stringResources/nl-NL/resources.resjson",
+    "stringResources/pl-PL/resources.resjson",
+    "stringResources/ja-JP/resources.resjson",
+    "stringResources/zh-CN/resources.resjson",
+    "stringResources/ko-KR/resources.resjson",
+    "stringResources/pt-PT/resources.resjson"
   ],
   "style": "style/visual.less",
   "capabilities": "capabilities.json",
