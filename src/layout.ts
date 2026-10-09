@@ -116,7 +116,7 @@ export class CloudLayout {
      * Máscara de la forma al tamaño del visual. Básicas: geometría. Icono y texto: se
      * dibujan en un canvas a la mayor escala que cabe, centrados. Imagen: lo oscuro y opaco.
      */
-    public buildMask(spec: ShapeSpec, W: number, H: number, circle = false): ShapeMask | null {
+    public buildMask(spec: ShapeSpec, W: number, H: number, circle = false, stretch = false): ShapeMask | null {
         W = Math.max(1, Math.floor(W)); H = Math.max(1, Math.floor(H));
         const c = this.doc.createElement("canvas"); c.width = W; c.height = H;
         const ctx = c.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
@@ -131,12 +131,14 @@ export class CloudLayout {
             }
             ctx.putImageData(img, 0, 0);
         } else if (spec.kind === "icon") {
-            const s = Math.min(W, H) * (1 - 2 * margin) / 24;
-            ctx.save();
-            ctx.translate((W - 24 * s) / 2, (H - 24 * s) / 2);
-            ctx.scale(s, s);
-            for (const d of spec.paths) ctx.fill(new Path2D(d));
-            ctx.restore();
+            // Se dibuja grande aparte, se recorta a la silueta real (los iconos traen margen
+            // dentro de su caja de 24x24) y se escala para llenar el visual.
+            const R = 512, src = this.doc.createElement("canvas"); src.width = R; src.height = R;
+            const sctx = src.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
+            sctx.scale(R / 24, R / 24);
+            sctx.fillStyle = "#000";
+            for (const d of spec.paths) sctx.fill(new Path2D(d));
+            this.drawFitted(ctx, src, W, H, margin, stretch);
         } else if (spec.kind === "text") {
             const lines = spec.text.split(/\||\n/).map(l => l.trim()).filter(Boolean);
             if (!lines.length) return null;
@@ -153,19 +155,22 @@ export class CloudLayout {
             const lh = size * 1.05, top = H / 2 - (lines.length - 1) * lh / 2;
             lines.forEach((l, i) => ctx.fillText(l, W / 2, top + i * lh));
         } else if (spec.kind === "image") {
+            // La parte oscura y opaca de la imagen es la forma; también se recorta y se escala.
             const iw = spec.img.naturalWidth, ih = spec.img.naturalHeight;
             if (!iw || !ih) return null;
-            const s = Math.min(W / iw, H / ih) * (1 - 2 * margin);
-            const off = this.doc.createElement("canvas"); off.width = W; off.height = H;
-            const octx = off.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
-            octx.drawImage(spec.img, (W - iw * s) / 2, (H - ih * s) / 2, iw * s, ih * s);
-            const px = octx.getImageData(0, 0, W, H).data;
-            const img = ctx.createImageData(W, H);
-            for (let i = 0; i < W * H; i++) {
-                const a = px[i * 4 + 3], lum = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
-                if (a > 128 && lum < 160) img.data[i * 4 + 3] = 255;
+            const k = Math.min(1, 512 / Math.max(iw, ih));
+            const sw = Math.max(1, Math.round(iw * k)), sh = Math.max(1, Math.round(ih * k));
+            const src = this.doc.createElement("canvas"); src.width = sw; src.height = sh;
+            const sctx = src.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
+            sctx.drawImage(spec.img, 0, 0, sw, sh);
+            const px0 = sctx.getImageData(0, 0, sw, sh);
+            for (let i = 0; i < sw * sh; i++) {
+                const d = px0.data, a = d[i * 4 + 3], lum = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+                d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = 0;
+                d[i * 4 + 3] = a > 128 && lum < 160 ? 255 : 0;
             }
-            ctx.putImageData(img, 0, 0);
+            sctx.putImageData(px0, 0, 0);
+            this.drawFitted(ctx, src, W, H, margin, stretch);
         }
         const px = ctx.getImageData(0, 0, W, H).data;
         const data = new Uint8Array(W * H);
@@ -173,6 +178,25 @@ export class CloudLayout {
         for (let i = 0; i < W * H; i++) if (px[i * 4 + 3] > 127) { data[i] = 1; n++; }
         if (n < W * H * 0.02) return null;          // forma vacía o diminuta: rectángulo
         return { width: W, height: H, data, canvas: c };
+    }
+
+    /**
+     * Copia la silueta de `src` (lo opaco) en el canvas del visual: recortada a sus límites
+     * reales y escalada para llenarlo, conservando la proporción o estirada.
+     */
+    private drawFitted(ctx: CanvasRenderingContext2D, src: HTMLCanvasElement, W: number, H: number, margin: number, stretch: boolean): void {
+        const sctx = src.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
+        const d = sctx.getImageData(0, 0, src.width, src.height).data;
+        let x0 = src.width, y0 = src.height, x1 = -1, y1 = -1;
+        for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) {
+            if (d[(y * src.width + x) * 4 + 3] > 127) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        }
+        if (x1 < x0 || y1 < y0) return;
+        const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+        const aw = W * (1 - 2 * margin), ah = H * (1 - 2 * margin);
+        let dw = aw, dh = ah;
+        if (!stretch) { const s = Math.min(aw / bw, ah / bh); dw = bw * s; dh = bh * s; }
+        ctx.drawImage(src, x0, y0, bw, bh, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
 
     /** La silueta pintada de un color, como imagen data: para el fondo del SVG. */

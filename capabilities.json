@@ -675,6 +675,14 @@
             "text": true
           }
         },
+        "stretch": {
+          "displayName": "Stretch shape to fill",
+          "displayNameKey": "Prop_layout_stretch",
+          "description": "Fill the whole visual even if the shape loses its proportions.",
+          "type": {
+            "bool": true
+          }
+        },
         "silhouette": {
           "displayName": "Show shape",
           "displayNameKey": "Prop_layout_silhouette",

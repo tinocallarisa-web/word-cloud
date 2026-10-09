@@ -28,7 +28,7 @@ interface Settings {
     orientation: string; verticalShare: number; fromAngle: number; toAngle: number; steps: number;
     shape: string; icon: string; shapeText: string;
     silhouette: boolean; silhouetteColor: string; silhouetteOpacity: number;
-    fillShape: boolean; fillMinFont: number;
+    fillShape: boolean; fillMinFont: number; stretch: boolean;
     jitter: number; seed: number; animate: boolean;
     colorMode: string; palette: string; wordColor: string; lowColor: string; highColor: string; background: string;
 }
@@ -42,7 +42,7 @@ const DEFAULTS: Settings = {
     orientation: "horizontal", verticalShare: 30, fromAngle: -45, toAngle: 45, steps: 3,
     shape: "rectangle", icon: "heart", shapeText: "TCViz",
     silhouette: true, silhouetteColor: "", silhouetteOpacity: 12,
-    fillShape: true, fillMinFont: 6,
+    fillShape: true, fillMinFont: 6, stretch: false,
     jitter: 15, seed: 7, animate: true,
     colorMode: "palette", palette: "tcviz", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "",
 };
@@ -88,6 +88,7 @@ function readSettings(objects: Objects): Settings {
         silhouette: pick("layout", "silhouette", "silhouette"), silhouetteColor: pick("layout", "silhouetteColor", "silhouetteColor"),
         silhouetteOpacity: pick("layout", "silhouetteOpacity", "silhouetteOpacity"),
         fillShape: pick("layout", "fillShape", "fillShape"), fillMinFont: pick("layout", "fillMinFont", "fillMinFont"),
+        stretch: pick("layout", "stretch", "stretch"),
         jitter: pick("layout", "jitter", "jitter"), seed: pick("layout", "seed", "seed"), animate: pick("layout", "animate", "animate"),
         colorMode: pick("colors", "mode", "colorMode"), palette: pick("colors", "palette", "palette"), wordColor: pick("colors", "wordColor", "wordColor"),
         lowColor: pick("colors", "lowColor", "lowColor"), highColor: pick("colors", "highColor", "highColor"), background: pick("colors", "background", "background"),
@@ -323,9 +324,9 @@ export class Visual implements IVisual {
             default: spec = { kind: "basic", name: s.shape }; key = "basic:" + s.shape;
         }
         if (!spec) return null;
-        key += "@" + W + "x" + H;
+        key += "@" + W + "x" + H + (s.stretch ? ":stretch" : "");
         if (this.maskCache?.key === key) return this.maskCache.mask;
-        const mask = this.layout.buildMask(spec, W, H, s.shape === "circle");
+        const mask = this.layout.buildMask(spec, W, H, s.shape === "circle", !!s.stretch);
         this.maskCache = { key, mask };
         return mask;
     }
@@ -633,7 +634,7 @@ export class Visual implements IVisual {
         const dd = (obj: string, prop: string, name: string, v: string, items: [string, string, string][]) => {
             const list = items.map(([value, key, fb]) => ({ value, displayName: T(key, fb) }));
             return { uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name),
-                control: { type: powerbi.visuals.FormattingComponent.Dropdown, properties: { descriptor: d(obj, prop), value: list.find(x => x.value === v) ?? list[0] } } };
+                control: { type: powerbi.visuals.FormattingComponent.Dropdown, properties: { descriptor: d(obj, prop), value: list.find(x => x.value === v) ?? list[0], items: list } as any } };
         };
         const card = (obj: string, name: string, slices: any[]) => ({ uid: `${obj}_card`, displayName: T(`Obj_${obj}`, name), groups: [{ uid: `${obj}_g`, displayName: "", slices }] });
 
@@ -680,6 +681,7 @@ export class Visual implements IVisual {
                         ["image", "Enum_sh_image", "Image (Shape image field)"]]),
                     dd("layout", "icon", "Icon", s.icon, Object.keys(ICONS).map(k => [k, "Enum_icon_" + k, k.replace(/-/g, " ").replace(/^./, c => c.toUpperCase())] as [string, string, string])),
                     txt("layout", "shapeText", "Shape text", s.shapeText),
+                    tog("layout", "stretch", "Stretch shape to fill", s.stretch),
                     tog("layout", "silhouette", "Show shape", s.silhouette),
                     col("layout", "silhouetteColor", "Shape color", s.silhouetteColor),
                     num("layout", "silhouetteOpacity", "Shape opacity %", s.silhouetteOpacity),

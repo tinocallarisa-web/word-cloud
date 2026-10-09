@@ -133,6 +133,7 @@
   "Prop_layout_silhouette": "Mostrar la forma",
   "Prop_layout_silhouetteColor": "Color de la forma",
   "Prop_layout_silhouetteOpacity": "% de opacidad de la forma",
+  "Prop_layout_stretch": "Estirar la forma para llenar",
   "Prop_orientation_fromAngle": "Desde el ángulo",
   "Prop_orientation_mode": "Palabras",
   "Prop_orientation_steps": "Número de ángulos",
