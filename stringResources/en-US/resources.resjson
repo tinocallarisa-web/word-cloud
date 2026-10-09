@@ -113,6 +113,7 @@
   "Prop_colors_mode": "Color by",
   "Prop_colors_palette": "Palette",
   "Prop_colors_wordColor": "Word color",
+  "Prop_freeText_autoLang": "Detect languages automatically",
   "Prop_freeText_bigrams": "Include two-word phrases",
   "Prop_freeText_exclude": "Exclude words (comma separated)",
   "Prop_freeText_langDe": "German stopwords",

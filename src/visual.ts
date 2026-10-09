@@ -3,7 +3,7 @@
 import powerbi from "powerbi-visuals-api";
 import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
 import { CloudLayout, LayoutWord, PlacedWord, ShapeMask, ShapeSpec } from "./layout";
-import { tokenize } from "./text";
+import { tokenize, detectLanguages } from "./text";
 import { ICONS } from "./icons";
 import { PALETTES, paletteById, ramp, hashIndex } from "./palettes";
 
@@ -23,7 +23,7 @@ interface Settings {
     template: string;
     maxWords: number; minFont: number; maxFont: number; scale: string;
     fontFamily: string; bold: boolean; padding: number; lowerCase: boolean; fit: boolean;
-    langEn: boolean; langEs: boolean; langPt: boolean; langFr: boolean; langDe: boolean; langIt: boolean;
+    autoLang: boolean; langEn: boolean; langEs: boolean; langPt: boolean; langFr: boolean; langDe: boolean; langIt: boolean;
     minLength: number; exclude: string; bigrams: boolean;
     orientation: string; verticalShare: number; fromAngle: number; toAngle: number; steps: number;
     shape: string; icon: string; shapeText: string;
@@ -38,7 +38,7 @@ const DEFAULTS: Settings = {
     template: "clean",
     maxWords: 150, minFont: 10, maxFont: 64, scale: "sqrt",
     fontFamily: "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif", bold: false, padding: 2, lowerCase: false, fit: true,
-    langEn: true, langEs: false, langPt: false, langFr: false, langDe: false, langIt: false,
+    autoLang: true, langEn: true, langEs: false, langPt: false, langFr: false, langDe: false, langIt: false,
     minLength: 3, exclude: "", bigrams: false,
     orientation: "horizontal", verticalShare: 30, fromAngle: -45, toAngle: 45, steps: 3,
     shape: "rectangle", icon: "heart", shapeText: "TCViz",
@@ -81,7 +81,7 @@ function readSettings(objects: Objects): Settings {
         maxFont: pick("words", "maxFont", "maxFont"), scale: pick("words", "scale", "scale"),
         fontFamily: pick("words", "fontFamily", "fontFamily"), bold: pick("words", "bold", "bold"),
         padding: pick("words", "padding", "padding"), lowerCase: pick("words", "lowerCase", "lowerCase"), fit: pick("words", "fit", "fit"),
-        langEn: pick("freeText", "langEn", "langEn"), langEs: pick("freeText", "langEs", "langEs"), langPt: pick("freeText", "langPt", "langPt"),
+        autoLang: pick("freeText", "autoLang", "autoLang"), langEn: pick("freeText", "langEn", "langEn"), langEs: pick("freeText", "langEs", "langEs"), langPt: pick("freeText", "langPt", "langPt"),
         langFr: pick("freeText", "langFr", "langFr"), langDe: pick("freeText", "langDe", "langDe"), langIt: pick("freeText", "langIt", "langIt"),
         minLength: pick("freeText", "minLength", "minLength"), exclude: pick("freeText", "exclude", "exclude"), bigrams: pick("freeText", "bigrams", "bigrams"),
         orientation: pick("orientation", "mode", "orientation"), verticalShare: pick("orientation", "verticalShare", "verticalShare"),
@@ -280,6 +280,11 @@ export class Visual implements IVisual {
         } else {
             const langs = [["en", s.langEn], ["es", s.langEs], ["pt", s.langPt], ["fr", s.langFr], ["de", s.langDe], ["it", s.langIt]]
                 .filter(x => x[1]).map(x => x[0] as string);
+            if (s.autoLang) {
+                for (const lg of detectLanguages(cat.values.map(v => (v === null || v === undefined ? "" : String(v))))) {
+                    if (!langs.includes(lg)) langs.push(lg);
+                }
+            }
             const rows = cat.values.map((raw, i) => ({
                 text: raw === null || raw === undefined ? "" : String(raw),
                 weight: sizeCol ? (num(sizeCol.values[i]) ?? 0) : 1, row: i,
@@ -671,6 +676,7 @@ export class Visual implements IVisual {
                     tog("words", "fit", "Shrink to fit all words", s.fit),
                 ]),
                 card("freeText", "Free text", [
+                    tog("freeText", "autoLang", "Detect languages automatically", s.autoLang),
                     tog("freeText", "langEn", "English stopwords", s.langEn),
                     tog("freeText", "langEs", "Spanish stopwords", s.langEs),
                     tog("freeText", "langPt", "Portuguese stopwords", s.langPt),

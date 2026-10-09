@@ -113,6 +113,7 @@
   "Prop_colors_mode": "Color por",
   "Prop_colors_palette": "Paleta",
   "Prop_colors_wordColor": "Color de palabra",
+  "Prop_freeText_autoLang": "Detectar idiomas automáticamente",
   "Prop_freeText_bigrams": "Incluir frases de dos palabras",
   "Prop_freeText_exclude": "Excluir palabras (separadas por comas)",
   "Prop_freeText_langDe": "Palabras vacías en alemán",

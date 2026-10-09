@@ -264,6 +264,14 @@
       "displayName": "Free text",
       "displayNameKey": "Obj_freeText",
       "properties": {
+        "autoLang": {
+          "displayName": "Detect languages automatically",
+          "displayNameKey": "Prop_freeText_autoLang",
+          "description": "Removes the stopwords of every language found in the text, plus the ones ticked below.",
+          "type": {
+            "bool": true
+          }
+        },
         "langEn": {
           "displayName": "English stopwords",
           "displayNameKey": "Prop_freeText_langEn",

@@ -8,7 +8,7 @@
 
 const STOP: Record<string, string> = {
     en: "a about above after again against all am an and any are as at be because been before being below between both but by can could did do does doing down during each few for from further had has have having he her here hers herself him himself his how i if in into is it its itself just me more most my myself no nor not now of off on once only or other our ours ourselves out over own same she should so some such than that the their theirs them themselves then there these they this those through to too under until up very was we were what when where which while who whom why will with would you your yours yourself yourselves also get got one two us via",
-    es: "a al algo algunas algunos ante antes como con contra cual cuando de del desde donde durante e el ella ellas ellos en entre era eran es esa esas ese eso esos esta estaba estado estan estar estas este esto estos fue fueron ha habia han hasta hay la las le les lo los mas me mi mis mucho muy nada ni no nos nosotros o os otra otro para pero poco por porque que quien se sea ser si sin sobre son su sus tambien tanto te tiene tienen todo todos tu tus un una uno unos y ya yo él más qué sí también está están",
+    es: "a al algo algunas algunos ante antes como con contra cual cuando de del desde donde durante e el ella ellas ellos en entre era eran es esa esas ese eso esos esta estaba estado estan estar estas este esto estos fue fueron ha habia han hasta hay la las le les lo los mas me mi mis mucho muy nada ni no nos nosotros o os otra otro para pero poco por porque que quien se sea ser si sin sobre son su sus tambien tanto te tiene tienen todo todos tu tus un una uno unos y ya yo él más qué sí también está están vez veces otro otros otras cada hace así aquí allí ahí entonces luego",
     pt: "a ao aos as até com como da das de dela dele do dos e ela ele eles em entre era essa esse esta este eu foi for há isso isto já la lhe mais mas me mesmo meu minha muito na nas nem no nos nossa nosso não o os ou para pela pelo por qual quando que quem se sem ser seu sua são também te tem tu um uma você",
     fr: "a ai au aux avec c ce ces cet cette d dans de des du elle elles en est et eux il ils j je l la le les leur leurs lui m ma mais me même mes moi mon ne nos notre nous on ou par pas pour qu que qui s sa se ses son sur ta te tes toi ton tu un une vos votre vous y à été être",
     de: "aber alle als also am an auch auf aus bei bin bis da damit dann das dass dem den der des die doch du durch ein eine einem einen einer es für hat hatte ich ihr im in ist ja kann mein mit nach nicht noch nur oder sich sie sind so über um und uns unter vom von vor war was wenn wie wir wird zu zum zur",
@@ -21,6 +21,37 @@ export interface TokenOptions {
     exclude: string[];         // palabras extra a quitar
     lowerCase: boolean;
     bigrams: boolean;          // también parejas de palabras ("customer service")
+}
+
+/**
+ * Idiomas presentes en el texto: se cuentan las palabras vacías de cada idioma y se activan
+ * los que pesan. Encuestas y reseñas mezclan idiomas a menudo; con una sola lista se colaban
+ * "con", "fue", "muy" en una nube de comentarios en inglés y español.
+ */
+export function detectLanguages(texts: string[]): string[] {
+    // Solo las palabras propias de cada idioma: "a", "in", "e", "o" están en varias listas y
+    // hacían que un texto en inglés y español activase los seis idiomas.
+    const lists: Record<string, string[]> = {};
+    for (const lg of Object.keys(STOP)) lists[lg] = STOP[lg].split(" ").filter(w => w.length >= 2);
+    const own: Record<string, Set<string>> = {};
+    for (const lg in lists) {
+        own[lg] = new Set(lists[lg].filter(w => !Object.keys(lists).some(o => o !== lg && lists[o].includes(w))));
+    }
+    const hits: Record<string, number> = {};
+    let total = 0, seen = 0;
+    const re = /[\p{L}]+/gu;
+    for (const t of texts) {
+        if (!t) continue;
+        for (const w0 of t.match(re) || []) {
+            const w = w0.toLowerCase();
+            total++;
+            for (const lg in own) if (own[lg].has(w)) hits[lg] = (hits[lg] || 0) + 1;
+        }
+        if (++seen > 5000) break;                 // muestra suficiente
+    }
+    if (!total) return [];
+    // Un idioma cuenta si sus palabras propias son al menos el 1 % del texto y aparecen 5 veces.
+    return Object.keys(hits).filter(lg => hits[lg] >= 5 && hits[lg] / total >= 0.01);
 }
 
 export function stopwords(languages: string[], extra: string[]): Set<string> {
