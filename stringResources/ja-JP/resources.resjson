@@ -177,5 +177,7 @@
   "UI_WarnDropped": "一部の単語が収まりません。ビジュアルを大きくするか、最大単語数やフォント サイズを小さくしてください。",
   "UI_WarnRows": "Power BI から一部の行のみが送られました。クラウドは受信した行を反映しています。",
   "UI_WarnRowsDesktop": "Power BI Desktop はビジュアルに最初の行のみを送ります。すべてを数えるにはサービスに発行してください。",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "中立値",
+  "UI_WarnColorSum": "カラー値が合計になっています。スコアの場合は、フィールドのメニューで [平均] を選んでください。"
 }

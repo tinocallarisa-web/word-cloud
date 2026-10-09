@@ -1049,6 +1049,14 @@
             }
           }
         },
+        "neutral": {
+          "displayName": "Neutral value",
+          "displayNameKey": "Prop_colors_neutral",
+          "description": "Sentiment: the Color value that counts as neutral (grey). 0 for a score from -1 to 1; 5.5 for a 1-10 score.",
+          "type": {
+            "numeric": true
+          }
+        },
         "background": {
           "displayName": "Background",
           "displayNameKey": "Prop_colors_background",

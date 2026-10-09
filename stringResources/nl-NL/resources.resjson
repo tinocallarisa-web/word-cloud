@@ -177,5 +177,7 @@
   "UI_WarnDropped": "Sommige woorden passen niet: vergroot de visual of verlaag Maximaal aantal woorden of de tekengroottes.",
   "UI_WarnRows": "Power BI heeft slechts een deel van de rijen verzonden: de wolk toont de ontvangen rijen.",
   "UI_WarnRowsDesktop": "Power BI Desktop stuurt een visual alleen de eerste rijen: publiceer naar de service om alles te tellen.",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "Neutrale waarde",
+  "UI_WarnColorSum": "Kleurwaarde is een som: kies voor een score Gemiddelde in het veldmenu."
 }

@@ -177,5 +177,7 @@
   "UI_WarnDropped": "部分词语放不下：请放大视觉对象，或降低最大词数或字号。",
   "UI_WarnRows": "Power BI 只发送了部分行：词云反映的是已接收的行。",
   "UI_WarnRowsDesktop": "Power BI Desktop 只向视觉对象发送前面的行：发布到服务后才能统计全部。",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "中性值",
+  "UI_WarnColorSum": "颜色值是求和：评分请在字段菜单中选择“平均值”。"
 }

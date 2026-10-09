@@ -36,7 +36,7 @@ interface Settings {
     outline: boolean; outlineColor: string; outlineWidth: number;
     fillShape: boolean; fillMinFont: number; stretch: boolean;
     jitter: number; seed: number; animate: boolean;
-    colorMode: string; palette: string; wordColor: string; lowColor: string; highColor: string; background: string;
+    colorMode: string; palette: string; wordColor: string; lowColor: string; highColor: string; background: string; neutral: number;
 }
 
 const DEFAULTS: Settings = {
@@ -51,7 +51,7 @@ const DEFAULTS: Settings = {
     outline: false, outlineColor: "", outlineWidth: 2,
     fillShape: true, fillMinFont: 6, stretch: false,
     jitter: 15, seed: 7, animate: true,
-    colorMode: "palette", palette: "tcviz", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "",
+    colorMode: "palette", palette: "tcviz", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "", neutral: 0,
 };
 
 /**
@@ -101,7 +101,7 @@ function readSettings(objects: Objects): Settings {
         stretch: pick("layout", "stretch", "stretch"),
         jitter: pick("layout", "jitter", "jitter"), seed: pick("layout", "seed", "seed"), animate: pick("layout", "animate", "animate"),
         colorMode: pick("colors", "mode", "colorMode"), palette: pick("colors", "palette", "palette"), wordColor: pick("colors", "wordColor", "wordColor"),
-        lowColor: pick("colors", "lowColor", "lowColor"), highColor: pick("colors", "highColor", "highColor"), background: pick("colors", "background", "background"),
+        lowColor: pick("colors", "lowColor", "lowColor"), highColor: pick("colors", "highColor", "highColor"), background: pick("colors", "background", "background"), neutral: pick("colors", "neutral", "neutral"),
     };
 }
 
@@ -276,6 +276,10 @@ export class Visual implements IVisual {
     private warnings(dv: DataView | undefined): void {
         const msgs: string[] = [];
         if (this.dropped > 0) msgs.push(this.t("UI_WarnDropped", "Some words do not fit: enlarge the visual, lower Maximum words or the font sizes.") + " (" + this.dropped + ")");
+        // Sentimiento con Valor de color sumado: comentarios repetidos suman sus notas y todo cae de un lado.
+        const cq = String((this as any).colorQuery || "");
+        if (this.settings.colorMode === "sentiment" && /^sum\(/i.test(cq))
+            msgs.push(this.t("UI_WarnColorSum", "Color value is a Sum: for a score, choose Average in the field menu."));
         if (this.truncatedAt) msgs.push((this.isDesktop
             ? this.t("UI_WarnRowsDesktop", "Power BI Desktop sends a visual only the first rows: publish to the Service to count them all.")
             : this.t("UI_WarnRows", "Power BI sent only part of the rows: the cloud reflects the rows received.")) + " (" + this.truncatedAt + ")");
@@ -459,8 +463,14 @@ export class Visual implements IVisual {
                 // (p. ej. el sentimiento medio de los comentarios que la mencionan).
                 let colorValue: number | null = null;
                 if (colorCol) {
-                    const cv = v.rows.map(r => num(colorCol.values[r])).filter((x): x is number => x !== null);
-                    if (cv.length) colorValue = cv.reduce((a, b) => a + b, 0) / cv.length;
+                    let sw = 0, sv = 0;
+                    for (const r of v.rows) {
+                        const c = num(colorCol.values[r]);
+                        if (c === null) continue;
+                        const wt = sizeCol ? (num(sizeCol.values[r]) ?? 0) : 1;
+                        sw += wt; sv += c * wt;
+                    }
+                    if (sw > 0) colorValue = sv / sw;
                 }
                 this.words.push({
                     key, text: v.display, weight: v.weight, colorValue, rows: v.rows,
@@ -471,6 +481,10 @@ export class Visual implements IVisual {
         this.words.sort((a, b) => b.weight - a.weight || a.text.localeCompare(b.text));
         this.words = this.words.slice(0, clamp(s.maxWords, 1, 1000));
         (this as any).fmtSize = fmtSize;
+        // Valor de color en el tooltip: con el nombre de la medida y su formato (en texto libre es la media).
+        (this as any).colorName = colorCol?.source?.displayName ?? null;
+        (this as any).colorQuery = colorCol?.source?.queryName ?? "";
+        (this as any).fmtColor = colorCol ? this.formatter(colorCol.source?.format, colorCol) : null;
         return this.words.length > 0;
     }
 
@@ -543,7 +557,11 @@ export class Visual implements IVisual {
         svg.appendChild(bgRect);
 
         const palette = paletteById(s.palette);
-        const stops = palette.id === "custom" || !palette.colors.length ? [s.lowColor, s.highColor] : palette.colors;
+        // Degradados: una paleta de categorías no es una escala; ahí mandan Color bajo y Color alto.
+        // Sentimiento: necesita una divergente; si la elegida no lo es, la de sentimiento.
+        const stops = palette.id === "custom" || !palette.colors.length ? [s.lowColor, s.highColor]
+            : s.colorMode === "sentiment" && palette.type !== "div" ? (paletteById("sentiment")?.colors ?? palette.colors)
+            : palette.type === "cat" ? [s.lowColor, s.highColor] : palette.colors;
 
         // Forma y silueta de fondo. En alto contraste, la silueta en el color del tema.
         const mask = W > 20 && H > 20 ? this.shapeMask(W, H, img) : null;
@@ -615,7 +633,8 @@ export class Visual implements IVisual {
         // Colores
         const cvs = this.words.map(w => w.colorValue).filter(v => v !== null) as number[];
         const cMin = cvs.length ? Math.min(...cvs) : 0, cMax = cvs.length ? Math.max(...cvs) : 1;
-        const absMax = cvs.length ? Math.max(...cvs.map(Math.abs)) : 1;
+        const neutral = Number(s.neutral) || 0;
+        const absMax = cvs.length ? Math.max(...cvs.map(v => Math.abs(v - neutral))) : 1;
         const catColors = palette.colors.length ? palette.colors : [s.lowColor, s.highColor];
         const colorOf = (w: WordDatum): string => {
             if (hc) return pal.foreground?.value ?? "#000";
@@ -624,7 +643,7 @@ export class Visual implements IVisual {
                 case "size": return ramp(stops, hi > lo ? (f(Math.max(0, w.weight)) - lo) / (hi - lo) : 1);
                 case "measure": return w.colorValue === null ? stops[0] : ramp(stops, cMax > cMin ? (w.colorValue - cMin) / (cMax - cMin) : 1);
                 // Sentimiento: divergente centrado en cero; el signo decide el lado.
-                case "sentiment": return w.colorValue === null ? ramp(stops, 0.5) : ramp(stops, 0.5 + (absMax ? w.colorValue / (2 * absMax) : 0));
+                case "sentiment": return w.colorValue === null ? ramp(stops, 0.5) : ramp(stops, 0.5 + (absMax ? (w.colorValue - neutral) / (2 * absMax) : 0));
                 case "palette": return w.ruleColor || catColors[hashIndex(w.key, catColors.length)];
                 default: return w.ruleColor || pal.getColor(w.key).value;
             }
@@ -764,6 +783,8 @@ export class Visual implements IVisual {
             { displayName: this.t("UI_TipWord", "Word"), value: w.text },
             { displayName: this.t("UI_TipSize", "Size"), value: (this as any).fmtSize(w.weight) },
         ];
+        const cName = (this as any).colorName, fmtColor = (this as any).fmtColor;
+        if (cName && fmtColor && w.colorValue !== null) items.push({ displayName: cName, value: fmtColor(w.colorValue) });
         if (w.rows.length > 1) items.push({ displayName: this.t("UI_TipRows", "Rows"), value: String(w.rows.length) });
         for (const t of w.tooltipExtras) items.push({ displayName: t.name, value: t.value });
         this.host.tooltipService.show({ dataItems: items as any, identities: w.ids.slice(0, 1), coordinates: [x, y], isTouchEvent: false });
@@ -914,6 +935,7 @@ export class Visual implements IVisual {
                     col("colors", "wordColor", "Word color", s.wordColor, true),
                     col("colors", "lowColor", "Low color", s.lowColor),
                     col("colors", "highColor", "High color", s.highColor),
+                    num("colors", "neutral", "Neutral value", s.neutral),
                     col("colors", "background", "Background", s.background),
                 ]),
             ],

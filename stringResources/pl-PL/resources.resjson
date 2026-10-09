@@ -177,5 +177,7 @@
   "UI_WarnDropped": "Niektóre słowa się nie mieszczą: powiększ wizualizację albo zmniejsz Maksymalną liczbę słów lub rozmiary czcionek.",
   "UI_WarnRows": "Power BI wysłał tylko część wierszy: chmura odzwierciedla otrzymane wiersze.",
   "UI_WarnRowsDesktop": "Power BI Desktop wysyła wizualizacji tylko pierwsze wiersze: opublikuj w usłudze, aby policzyć wszystkie.",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "Wartość neutralna",
+  "UI_WarnColorSum": "Wartość koloru to Suma: dla oceny wybierz Średnia w menu pola."
 }

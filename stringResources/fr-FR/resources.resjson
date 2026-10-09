@@ -177,5 +177,7 @@
   "UI_WarnDropped": "Certains mots ne tiennent pas : agrandissez le visuel, réduisez Nombre maximal de mots ou les tailles de police.",
   "UI_WarnRows": "Power BI n'a envoyé qu'une partie des lignes : le nuage reflète les lignes reçues.",
   "UI_WarnRowsDesktop": "Power BI Desktop n'envoie au visuel que les premières lignes : publiez dans le service pour toutes les compter.",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "Valeur neutre",
+  "UI_WarnColorSum": "Valeur de couleur est une Somme : pour une note, choisissez Moyenne dans le menu du champ."
 }

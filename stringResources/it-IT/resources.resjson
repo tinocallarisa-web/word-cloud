@@ -177,5 +177,7 @@
   "UI_WarnDropped": "Alcune parole non entrano: ingrandisci il visual o riduci Numero massimo di parole o le dimensioni del carattere.",
   "UI_WarnRows": "Power BI ha inviato solo parte delle righe: la nuvola riflette le righe ricevute.",
   "UI_WarnRowsDesktop": "Power BI Desktop invia al visual solo le prime righe: pubblica nel servizio per contarle tutte.",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "Valore neutro",
+  "UI_WarnColorSum": "Valore colore è una Somma: per un punteggio scegli Media nel menu del campo."
 }

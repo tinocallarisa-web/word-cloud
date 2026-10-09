@@ -177,5 +177,7 @@
   "UI_WarnDropped": "Algumas palavras não cabem: aumente o visual ou reduza Máximo de palavras ou os tamanhos de fonte.",
   "UI_WarnRows": "O Power BI enviou só parte das linhas: a nuvem reflete as linhas recebidas.",
   "UI_WarnRowsDesktop": "O Power BI Desktop envia ao visual só as primeiras linhas: publique no serviço para contar todas.",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "Valor neutro",
+  "UI_WarnColorSum": "Valor de cor é uma Soma: para uma nota, escolha Média no menu do campo."
 }

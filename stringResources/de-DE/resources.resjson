@@ -177,5 +177,7 @@
   "UI_WarnDropped": "Einige Wörter passen nicht: Visual vergrößern oder Maximale Wortanzahl bzw. Schriftgrößen verringern.",
   "UI_WarnRows": "Power BI hat nur einen Teil der Zeilen gesendet: Die Wolke zeigt die empfangenen Zeilen.",
   "UI_WarnRowsDesktop": "Power BI Desktop sendet einem Visual nur die ersten Zeilen: Im Dienst veröffentlichen, um alle zu zählen.",
-  "UI_WarnTitle": "Word Cloud"
+  "UI_WarnTitle": "Word Cloud",
+  "Prop_colors_neutral": "Neutraler Wert",
+  "UI_WarnColorSum": "Farbwert ist eine Summe: Wählen Sie für eine Bewertung im Feldmenü Durchschnitt."
 }
