@@ -211,6 +211,28 @@ export class CloudLayout {
         return c.toDataURL("image/png");
     }
 
+    /**
+     * Borde de la forma: un anillo de `width` px POR FUERA de la silueta, para que nunca
+     * pise las palabras. Se dilata la máscara (copias desplazadas en círculo) y se le
+     * resta la forma original.
+     */
+    public static outline(doc: Document, mask: ShapeMask, color: string, width: number): string | null {
+        if (!mask.canvas || width <= 0) return null;
+        const c = doc.createElement("canvas"); c.width = mask.width; c.height = mask.height;
+        const ctx = c.getContext("2d") as CanvasRenderingContext2D;
+        const steps = Math.max(12, Math.round(width * 8));
+        for (let i = 0; i < steps; i++) {
+            const a = (i / steps) * Math.PI * 2;
+            ctx.drawImage(mask.canvas, Math.cos(a) * width, Math.sin(a) * width);
+        }
+        ctx.globalCompositeOperation = "source-in";
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.drawImage(mask.canvas, 0, 0);
+        return c.toDataURL("image/png");
+    }
+
     /** Carga una imagen data: (nunca una URL externa: el visual no sale a la red). */
     public static loadImage(doc: Document, src: string): Promise<HTMLImageElement | null> {
         if (!/^data:image\//i.test(src)) return Promise.resolve(null);

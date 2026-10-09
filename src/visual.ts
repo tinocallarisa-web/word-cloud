@@ -28,6 +28,7 @@ interface Settings {
     orientation: string; verticalShare: number; fromAngle: number; toAngle: number; steps: number;
     shape: string; icon: string; shapeText: string;
     silhouette: boolean; silhouetteColor: string; silhouetteOpacity: number;
+    outline: boolean; outlineColor: string; outlineWidth: number;
     fillShape: boolean; fillMinFont: number; stretch: boolean;
     jitter: number; seed: number; animate: boolean;
     colorMode: string; palette: string; wordColor: string; lowColor: string; highColor: string; background: string;
@@ -42,6 +43,7 @@ const DEFAULTS: Settings = {
     orientation: "horizontal", verticalShare: 30, fromAngle: -45, toAngle: 45, steps: 3,
     shape: "rectangle", icon: "heart", shapeText: "TCViz",
     silhouette: true, silhouetteColor: "", silhouetteOpacity: 12,
+    outline: false, outlineColor: "", outlineWidth: 2,
     fillShape: true, fillMinFont: 6, stretch: false,
     jitter: 15, seed: 7, animate: true,
     colorMode: "palette", palette: "tcviz", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "",
@@ -57,7 +59,7 @@ const TEMPLATES: Record<string, Partial<Settings>> = {
     bold: { bold: true, orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 80, scale: "linear", jitter: 25, palette: "vivid" },
     editorial: { fontFamily: "Georgia, 'Times New Roman', serif", colorMode: "size", palette: "ink", padding: 3, scale: "sqrt" },
     mono: { colorMode: "single", wordColor: "#3D3929", bold: true, padding: 2 },
-    poster: { bold: true, shape: "icon", icon: "heart", orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 96, scale: "linear", palette: "sunset", fontFamily: "'Segoe UI Black', 'Segoe UI', sans-serif" },
+    poster: { bold: true, shape: "icon", icon: "heart", outline: true, outlineWidth: 3, orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 96, scale: "linear", palette: "sunset", fontFamily: "'Segoe UI Black', 'Segoe UI', sans-serif" },
 };
 
 type Objects = powerbi.DataViewObjects | undefined;
@@ -87,6 +89,8 @@ function readSettings(objects: Objects): Settings {
         shape: pick("layout", "shape", "shape"), icon: pick("layout", "icon", "icon"), shapeText: pick("layout", "shapeText", "shapeText"),
         silhouette: pick("layout", "silhouette", "silhouette"), silhouetteColor: pick("layout", "silhouetteColor", "silhouetteColor"),
         silhouetteOpacity: pick("layout", "silhouetteOpacity", "silhouetteOpacity"),
+        outline: pick("layout", "outline", "outline"), outlineColor: pick("layout", "outlineColor", "outlineColor"),
+        outlineWidth: pick("layout", "outlineWidth", "outlineWidth"),
         fillShape: pick("layout", "fillShape", "fillShape"), fillMinFont: pick("layout", "fillMinFont", "fillMinFont"),
         stretch: pick("layout", "stretch", "stretch"),
         jitter: pick("layout", "jitter", "jitter"), seed: pick("layout", "seed", "seed"), animate: pick("layout", "animate", "animate"),
@@ -369,13 +373,23 @@ export class Visual implements IVisual {
             let n = 0;
             for (let i = 0; i < mask.data.length; i++) n += mask.data[i];
             coverage = n / mask.data.length;
+            const auto = s.colorMode === "single" ? s.wordColor
+                : s.colorMode === "theme" ? pal.getColor("__shape__").value
+                : (stops[Math.floor(stops.length / 2)] || stops[0]);
             if (hc) {
                 this.addSilhouette(mask, pal.foreground?.value ?? "#000", 0.15, W, H);
             } else if (s.silhouette) {
-                const auto = s.colorMode === "single" ? s.wordColor
-                    : s.colorMode === "theme" ? pal.getColor("__shape__").value
-                    : (stops[Math.floor(stops.length / 2)] || stops[0]);
                 this.addSilhouette(mask, s.silhouetteColor || auto, clamp(s.silhouetteOpacity, 0, 100) / 100, W, H);
+            }
+            // Borde: en alto contraste, del color del tema y siempre visible si está activado.
+            if (s.outline) {
+                const url = CloudLayout.outline(document, mask, hc ? (pal.foreground?.value ?? "#000") : (s.outlineColor || s.silhouetteColor || auto), clamp(s.outlineWidth, 0, 20));
+                if (url) {
+                    const im = document.createElementNS(SVG, "image");
+                    im.setAttribute("href", url); im.setAttribute("width", String(W)); im.setAttribute("height", String(H));
+                    im.setAttribute("pointer-events", "none"); im.setAttribute("aria-hidden", "true");
+                    this.svg.appendChild(im);
+                }
             }
         }
 
@@ -685,6 +699,9 @@ export class Visual implements IVisual {
                     tog("layout", "silhouette", "Show shape", s.silhouette),
                     col("layout", "silhouetteColor", "Shape color", s.silhouetteColor),
                     num("layout", "silhouetteOpacity", "Shape opacity %", s.silhouetteOpacity),
+                    tog("layout", "outline", "Shape border", s.outline),
+                    col("layout", "outlineColor", "Border color", s.outlineColor),
+                    num("layout", "outlineWidth", "Border width", s.outlineWidth),
                     tog("layout", "fillShape", "Fill the shape", s.fillShape),
                     num("layout", "fillMinFont", "Smallest fill size", s.fillMinFont),
                     num("layout", "jitter", "Jitter %", s.jitter),

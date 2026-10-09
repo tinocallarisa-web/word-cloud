@@ -708,6 +708,32 @@
             "numeric": true
           }
         },
+        "outline": {
+          "displayName": "Shape border",
+          "displayNameKey": "Prop_layout_outline",
+          "description": "A line around the outside of the shape.",
+          "type": {
+            "bool": true
+          }
+        },
+        "outlineColor": {
+          "displayName": "Border color",
+          "displayNameKey": "Prop_layout_outlineColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "outlineWidth": {
+          "displayName": "Border width",
+          "displayNameKey": "Prop_layout_outlineWidth",
+          "type": {
+            "numeric": true
+          }
+        },
         "fillShape": {
           "displayName": "Fill the shape",
           "displayNameKey": "Prop_layout_fillShape",
