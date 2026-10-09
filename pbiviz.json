@@ -1,0 +1,31 @@
+{
+  "visual": {
+    "name": "wordCloudTCViz",
+    "displayName": "Word Cloud by TCViz",
+    "guid": "wordCloudTCVizB25C9426AD9548F19EB64B83E0BD386E",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "A word cloud that reads well: word size by any measure, free text with stopwords in several languages, custom shapes and image masks, orientation and jitter with a fixed seed, theme colours and conditional formatting. Free.",
+    "supportUrl": "https://tinocallarisa-web.github.io/word-cloud/support.html",
+    "privacyTermsLink": "https://tinocallarisa-web.github.io/word-cloud/privacy.html",
+    "gitHubUrl": "https://github.com/tinocallarisa-web/word-cloud"
+  },
+  "author": {
+    "name": "TCViz",
+    "email": "support@tcviz.com"
+  },
+  "apiVersion": "5.11.1",
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": [],
+  "stringResources": [
+    "stringResources/en-US/resources.resjson",
+    "stringResources/es-ES/resources.resjson"
+  ],
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "privacyTerms": {
+    "link": "https://tinocallarisa-web.github.io/word-cloud/privacy.html"
+  }
+}

@@ -1,0 +1,584 @@
+{
+  "dataRoles": [
+    {
+      "name": "words",
+      "kind": "Grouping",
+      "displayName": "Words",
+      "displayNameKey": "Role_words",
+      "description": "One word or phrase per row."
+    },
+    {
+      "name": "text",
+      "kind": "Grouping",
+      "displayName": "Text (free text)",
+      "displayNameKey": "Role_text",
+      "description": "Comments, answers or reviews. The visual splits them into words and removes stopwords."
+    },
+    {
+      "name": "size",
+      "kind": "Measure",
+      "displayName": "Size",
+      "displayNameKey": "Role_size",
+      "description": "Word size. Without it, the number of times the word appears."
+    },
+    {
+      "name": "colorBy",
+      "kind": "Measure",
+      "displayName": "Color by",
+      "displayNameKey": "Role_colorBy",
+      "description": "Colour words on a gradient by this measure."
+    },
+    {
+      "name": "tooltips",
+      "kind": "Measure",
+      "displayName": "Tooltips",
+      "displayNameKey": "Role_tooltips"
+    },
+    {
+      "name": "maskImage",
+      "kind": "Measure",
+      "displayName": "Shape image",
+      "displayNameKey": "Role_maskImage",
+      "description": "A Base64 image (data:image/...) from your model. Words fill its dark area. Set Layout > Shape to Image."
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "words": {
+            "max": 1
+          },
+          "text": {
+            "max": 0
+          },
+          "size": {
+            "max": 1
+          },
+          "colorBy": {
+            "max": 1
+          },
+          "maskImage": {
+            "max": 1
+          }
+        },
+        {
+          "words": {
+            "max": 0
+          },
+          "text": {
+            "max": 1
+          },
+          "size": {
+            "max": 1
+          },
+          "colorBy": {
+            "max": 1
+          },
+          "maskImage": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "bind": {
+                "to": "words"
+              }
+            },
+            {
+              "bind": {
+                "to": "text"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "window": {
+              "count": 30000
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "size"
+              }
+            },
+            {
+              "bind": {
+                "to": "colorBy"
+              }
+            },
+            {
+              "bind": {
+                "to": "tooltips"
+              }
+            },
+            {
+              "bind": {
+                "to": "maskImage"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "style": {
+      "displayName": "Style template",
+      "displayNameKey": "Obj_style",
+      "properties": {
+        "template": {
+          "displayName": "Template",
+          "displayNameKey": "Prop_style_template",
+          "description": "A starting look. Any setting you change yourself wins over the template.",
+          "type": {
+            "enumeration": [
+              {
+                "value": "none",
+                "displayName": "None",
+                "displayNameKey": "Enum_tpl_none"
+              },
+              {
+                "value": "clean",
+                "displayName": "Clean",
+                "displayNameKey": "Enum_tpl_clean"
+              },
+              {
+                "value": "bold",
+                "displayName": "Bold",
+                "displayNameKey": "Enum_tpl_bold"
+              },
+              {
+                "value": "editorial",
+                "displayName": "Editorial",
+                "displayNameKey": "Enum_tpl_editorial"
+              },
+              {
+                "value": "mono",
+                "displayName": "Monochrome",
+                "displayNameKey": "Enum_tpl_mono"
+              },
+              {
+                "value": "poster",
+                "displayName": "Poster",
+                "displayNameKey": "Enum_tpl_poster"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "words": {
+      "displayName": "Words",
+      "displayNameKey": "Obj_words",
+      "properties": {
+        "maxWords": {
+          "displayName": "Maximum words",
+          "displayNameKey": "Prop_words_maxWords",
+          "type": {
+            "numeric": true
+          }
+        },
+        "minFont": {
+          "displayName": "Smallest font size",
+          "displayNameKey": "Prop_words_minFont",
+          "type": {
+            "numeric": true
+          }
+        },
+        "maxFont": {
+          "displayName": "Largest font size",
+          "displayNameKey": "Prop_words_maxFont",
+          "type": {
+            "numeric": true
+          }
+        },
+        "scale": {
+          "displayName": "Size scale",
+          "displayNameKey": "Prop_words_scale",
+          "type": {
+            "enumeration": [
+              {
+                "value": "linear",
+                "displayName": "Linear",
+                "displayNameKey": "Enum_scale_linear"
+              },
+              {
+                "value": "sqrt",
+                "displayName": "Square root",
+                "displayNameKey": "Enum_scale_sqrt"
+              },
+              {
+                "value": "log",
+                "displayName": "Logarithmic",
+                "displayNameKey": "Enum_scale_log"
+              }
+            ]
+          }
+        },
+        "fontFamily": {
+          "displayName": "Font",
+          "displayNameKey": "Prop_words_fontFamily",
+          "type": {
+            "formatting": {
+              "fontFamily": true
+            }
+          }
+        },
+        "bold": {
+          "displayName": "Bold",
+          "displayNameKey": "Prop_words_bold",
+          "type": {
+            "bool": true
+          }
+        },
+        "padding": {
+          "displayName": "Spacing",
+          "displayNameKey": "Prop_words_padding",
+          "type": {
+            "numeric": true
+          }
+        },
+        "lowerCase": {
+          "displayName": "Lower case",
+          "displayNameKey": "Prop_words_lowerCase",
+          "type": {
+            "bool": true
+          }
+        },
+        "fit": {
+          "displayName": "Shrink to fit all words",
+          "displayNameKey": "Prop_words_fit",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "freeText": {
+      "displayName": "Free text",
+      "displayNameKey": "Obj_freeText",
+      "properties": {
+        "langEn": {
+          "displayName": "English stopwords",
+          "displayNameKey": "Prop_freeText_langEn",
+          "type": {
+            "bool": true
+          }
+        },
+        "langEs": {
+          "displayName": "Spanish stopwords",
+          "displayNameKey": "Prop_freeText_langEs",
+          "type": {
+            "bool": true
+          }
+        },
+        "langPt": {
+          "displayName": "Portuguese stopwords",
+          "displayNameKey": "Prop_freeText_langPt",
+          "type": {
+            "bool": true
+          }
+        },
+        "langFr": {
+          "displayName": "French stopwords",
+          "displayNameKey": "Prop_freeText_langFr",
+          "type": {
+            "bool": true
+          }
+        },
+        "langDe": {
+          "displayName": "German stopwords",
+          "displayNameKey": "Prop_freeText_langDe",
+          "type": {
+            "bool": true
+          }
+        },
+        "langIt": {
+          "displayName": "Italian stopwords",
+          "displayNameKey": "Prop_freeText_langIt",
+          "type": {
+            "bool": true
+          }
+        },
+        "minLength": {
+          "displayName": "Minimum word length",
+          "displayNameKey": "Prop_freeText_minLength",
+          "type": {
+            "numeric": true
+          }
+        },
+        "exclude": {
+          "displayName": "Exclude words (comma separated)",
+          "displayNameKey": "Prop_freeText_exclude",
+          "type": {
+            "text": true
+          }
+        },
+        "bigrams": {
+          "displayName": "Include two-word phrases",
+          "displayNameKey": "Prop_freeText_bigrams",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "orientation": {
+      "displayName": "Orientation",
+      "displayNameKey": "Obj_orientation",
+      "properties": {
+        "mode": {
+          "displayName": "Words",
+          "displayNameKey": "Prop_orientation_mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "horizontal",
+                "displayName": "Horizontal",
+                "displayNameKey": "Enum_or_horizontal"
+              },
+              {
+                "value": "mixed",
+                "displayName": "Horizontal and vertical",
+                "displayNameKey": "Enum_or_mixed"
+              },
+              {
+                "value": "vertical",
+                "displayName": "Vertical",
+                "displayNameKey": "Enum_or_vertical"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom angles",
+                "displayNameKey": "Enum_or_custom"
+              }
+            ]
+          }
+        },
+        "verticalShare": {
+          "displayName": "Vertical words %",
+          "displayNameKey": "Prop_orientation_verticalShare",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fromAngle": {
+          "displayName": "From angle",
+          "displayNameKey": "Prop_orientation_fromAngle",
+          "type": {
+            "numeric": true
+          }
+        },
+        "toAngle": {
+          "displayName": "To angle",
+          "displayNameKey": "Prop_orientation_toAngle",
+          "type": {
+            "numeric": true
+          }
+        },
+        "steps": {
+          "displayName": "Number of angles",
+          "displayNameKey": "Prop_orientation_steps",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "layout": {
+      "displayName": "Layout",
+      "displayNameKey": "Obj_layout",
+      "properties": {
+        "shape": {
+          "displayName": "Shape",
+          "displayNameKey": "Prop_layout_shape",
+          "type": {
+            "enumeration": [
+              {
+                "value": "rectangle",
+                "displayName": "Rectangle",
+                "displayNameKey": "Enum_sh_rectangle"
+              },
+              {
+                "value": "ellipse",
+                "displayName": "Ellipse",
+                "displayNameKey": "Enum_sh_ellipse"
+              },
+              {
+                "value": "circle",
+                "displayName": "Circle",
+                "displayNameKey": "Enum_sh_circle"
+              },
+              {
+                "value": "diamond",
+                "displayName": "Diamond",
+                "displayNameKey": "Enum_sh_diamond"
+              },
+              {
+                "value": "triangle",
+                "displayName": "Triangle",
+                "displayNameKey": "Enum_sh_triangle"
+              },
+              {
+                "value": "star",
+                "displayName": "Star",
+                "displayNameKey": "Enum_sh_star"
+              },
+              {
+                "value": "heart",
+                "displayName": "Heart",
+                "displayNameKey": "Enum_sh_heart"
+              },
+              {
+                "value": "cloud",
+                "displayName": "Cloud",
+                "displayNameKey": "Enum_sh_cloud"
+              },
+              {
+                "value": "image",
+                "displayName": "Image (Shape image field)",
+                "displayNameKey": "Enum_sh_image"
+              }
+            ]
+          }
+        },
+        "jitter": {
+          "displayName": "Jitter %",
+          "displayNameKey": "Prop_layout_jitter",
+          "type": {
+            "numeric": true
+          }
+        },
+        "seed": {
+          "displayName": "Seed",
+          "displayNameKey": "Prop_layout_seed",
+          "description": "Same seed, same cloud. Change it for another arrangement.",
+          "type": {
+            "numeric": true
+          }
+        },
+        "animate": {
+          "displayName": "Animate",
+          "displayNameKey": "Prop_layout_animate",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "colors": {
+      "displayName": "Colors",
+      "displayNameKey": "Obj_colors",
+      "properties": {
+        "mode": {
+          "displayName": "Color by",
+          "displayNameKey": "Prop_colors_mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "theme",
+                "displayName": "Theme palette",
+                "displayNameKey": "Enum_col_theme"
+              },
+              {
+                "value": "single",
+                "displayName": "Single color",
+                "displayNameKey": "Enum_col_single"
+              },
+              {
+                "value": "size",
+                "displayName": "Gradient by size",
+                "displayNameKey": "Enum_col_size"
+              },
+              {
+                "value": "measure",
+                "displayName": "Gradient by Color by field",
+                "displayNameKey": "Enum_col_measure"
+              }
+            ]
+          }
+        },
+        "wordColor": {
+          "displayName": "Word color",
+          "displayNameKey": "Prop_colors_wordColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          },
+          "description": "Supports conditional formatting (fx): a rule or a field gives each word its own colour.",
+          "rule": {
+            "inputRole": "size",
+            "output": {
+              "property": "wordColor",
+              "selector": [
+                "words"
+              ]
+            }
+          }
+        },
+        "lowColor": {
+          "displayName": "Low color",
+          "displayNameKey": "Prop_colors_lowColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "highColor": {
+          "displayName": "High color",
+          "displayNameKey": "Prop_colors_highColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "background": {
+          "displayName": "Background",
+          "displayNameKey": "Prop_colors_background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "roles": [
+      "tooltips"
+    ]
+  },
+  "drilldown": {
+    "roles": [
+      "words"
+    ]
+  },
+  "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": []
+}

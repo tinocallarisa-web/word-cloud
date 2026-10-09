@@ -1,0 +1,622 @@
+"use strict";
+
+import powerbi from "powerbi-visuals-api";
+import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
+import { CloudLayout, LayoutWord, PlacedWord, ShapeName } from "./layout";
+import { tokenize } from "./text";
+
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import IVisual = powerbi.extensibility.visual.IVisual;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import ISelectionId = powerbi.visuals.ISelectionId;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import DataView = powerbi.DataView;
+
+const SVG = "http://www.w3.org/2000/svg";
+
+// ─── Ajustes ──────────────────────────────────────────────────────────────────
+
+interface Settings {
+    template: string;
+    maxWords: number; minFont: number; maxFont: number; scale: string;
+    fontFamily: string; bold: boolean; padding: number; lowerCase: boolean; fit: boolean;
+    langEn: boolean; langEs: boolean; langPt: boolean; langFr: boolean; langDe: boolean; langIt: boolean;
+    minLength: number; exclude: string; bigrams: boolean;
+    orientation: string; verticalShare: number; fromAngle: number; toAngle: number; steps: number;
+    shape: string; jitter: number; seed: number; animate: boolean;
+    colorMode: string; wordColor: string; lowColor: string; highColor: string; background: string;
+}
+
+const DEFAULTS: Settings = {
+    template: "clean",
+    maxWords: 150, minFont: 10, maxFont: 64, scale: "sqrt",
+    fontFamily: "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif", bold: false, padding: 2, lowerCase: false, fit: true,
+    langEn: true, langEs: false, langPt: false, langFr: false, langDe: false, langIt: false,
+    minLength: 3, exclude: "", bigrams: false,
+    orientation: "horizontal", verticalShare: 30, fromAngle: -45, toAngle: 45, steps: 3,
+    shape: "rectangle", jitter: 15, seed: 7, animate: true,
+    colorMode: "theme", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "",
+};
+
+/**
+ * Plantillas: un punto de partida. Solo rellenan lo que el usuario no ha tocado: cualquier
+ * ajuste escrito a mano (presente en metadata.objects) gana a la plantilla.
+ */
+const TEMPLATES: Record<string, Partial<Settings>> = {
+    none: {},
+    clean: {},
+    bold: { bold: true, orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 80, scale: "linear", jitter: 25 },
+    editorial: { fontFamily: "Georgia, 'Times New Roman', serif", colorMode: "size", lowColor: "#B5B5B5", highColor: "#1F1F1F", padding: 3, scale: "sqrt" },
+    mono: { colorMode: "single", wordColor: "#3D3929", bold: true, padding: 2 },
+    poster: { bold: true, shape: "ellipse", orientation: "mixed", verticalShare: 35, padding: 1, maxFont: 96, scale: "linear", fontFamily: "'Segoe UI Black', 'Segoe UI', sans-serif" },
+};
+
+type Objects = powerbi.DataViewObjects | undefined;
+
+function readSettings(objects: Objects): Settings {
+    const tplName = (objects?.["style"]?.["template"] as string) || DEFAULTS.template;
+    const tpl = TEMPLATES[tplName] || {};
+    const pick = <K extends keyof Settings>(obj: string, prop: string, key: K): Settings[K] => {
+        const raw = objects?.[obj]?.[prop];
+        if (raw !== undefined && raw !== null) {
+            if (typeof raw === "object" && (raw as any).solid) return (raw as any).solid.color as Settings[K];
+            return raw as Settings[K];
+        }
+        return (tpl[key] !== undefined ? tpl[key] : DEFAULTS[key]) as Settings[K];
+    };
+    return {
+        template: tplName,
+        maxWords: pick("words", "maxWords", "maxWords"), minFont: pick("words", "minFont", "minFont"),
+        maxFont: pick("words", "maxFont", "maxFont"), scale: pick("words", "scale", "scale"),
+        fontFamily: pick("words", "fontFamily", "fontFamily"), bold: pick("words", "bold", "bold"),
+        padding: pick("words", "padding", "padding"), lowerCase: pick("words", "lowerCase", "lowerCase"), fit: pick("words", "fit", "fit"),
+        langEn: pick("freeText", "langEn", "langEn"), langEs: pick("freeText", "langEs", "langEs"), langPt: pick("freeText", "langPt", "langPt"),
+        langFr: pick("freeText", "langFr", "langFr"), langDe: pick("freeText", "langDe", "langDe"), langIt: pick("freeText", "langIt", "langIt"),
+        minLength: pick("freeText", "minLength", "minLength"), exclude: pick("freeText", "exclude", "exclude"), bigrams: pick("freeText", "bigrams", "bigrams"),
+        orientation: pick("orientation", "mode", "orientation"), verticalShare: pick("orientation", "verticalShare", "verticalShare"),
+        fromAngle: pick("orientation", "fromAngle", "fromAngle"), toAngle: pick("orientation", "toAngle", "toAngle"), steps: pick("orientation", "steps", "steps"),
+        shape: pick("layout", "shape", "shape"), jitter: pick("layout", "jitter", "jitter"), seed: pick("layout", "seed", "seed"), animate: pick("layout", "animate", "animate"),
+        colorMode: pick("colors", "mode", "colorMode"), wordColor: pick("colors", "wordColor", "wordColor"),
+        lowColor: pick("colors", "lowColor", "lowColor"), highColor: pick("colors", "highColor", "highColor"), background: pick("colors", "background", "background"),
+    };
+}
+
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(v) ? v : lo));
+
+function mix(a: string, b: string, t: number): string {
+    const p = (c: string) => { const h = c.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map(x => x + x).join("") : h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+    const [r1, g1, b1] = p(a), [r2, g2, b2] = p(b);
+    const f = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, "0");
+    return "#" + f(r1, r2) + f(g1, g2) + f(b1, b2);
+}
+
+// ─── Modelo de datos ──────────────────────────────────────────────────────────
+
+interface WordDatum {
+    key: string;
+    text: string;
+    weight: number;
+    colorValue: number | null;
+    rows: number[];                    // filas de la categoría (1 en modo palabras; n en texto libre)
+    ids: ISelectionId[];
+    highlighted: boolean;              // false = otro visual lo ha dejado fuera del resaltado
+    ruleColor: string | null;          // color de la regla fx, si la hay
+    tooltipExtras: { name: string; value: string }[];
+}
+
+// ─── Visual ───────────────────────────────────────────────────────────────────
+
+export class Visual implements IVisual {
+    private host: IVisualHost;
+    private root: HTMLDivElement;
+    private svg: SVGSVGElement;
+    private layout: CloudLayout;
+    private selectionManager: ISelectionManager;
+    private events: powerbi.extensibility.IVisualEventService;
+    private loc: powerbi.extensibility.ILocalizationManager;
+    private settings: Settings = DEFAULTS;
+    private words: WordDatum[] = [];
+    private placed: PlacedWord[] = [];
+    private lastKey = "";                 // datos + ajustes de la última nube: si no cambia, no se re-anima
+    private focusIndex = 0;
+    private keyboardNav = false;
+    private updateToken = 0;
+    private masks = new Map<string, Promise<{ width: number; height: number; data: Uint8Array } | null>>();
+    private hasHighlights = false;
+    private lastOptions: VisualUpdateOptions | null = null;
+
+    constructor(options: VisualConstructorOptions) {
+        this.host = options.host;
+        this.events = options.host.eventService;
+        this.loc = options.host.createLocalizationManager();
+        this.selectionManager = options.host.createSelectionManager();
+        this.root = document.createElement("div");
+        this.root.className = "tcwc";
+        this.root.style.cssText = "position:absolute;inset:0;overflow:hidden;";
+        options.element.appendChild(this.root);
+        this.svg = document.createElementNS(SVG, "svg") as SVGSVGElement;
+        this.svg.setAttribute("role", "listbox");
+        this.svg.setAttribute("aria-multiselectable", "true");
+        this.root.appendChild(this.svg);
+        this.layout = new CloudLayout(document);
+        this.injectStyles();
+
+        // Clic en el fondo: limpiar selección. Menú contextual también en vacío.
+        this.svg.addEventListener("click", (e) => {
+            if (e.target === this.svg || (e.target as Element).getAttribute?.("data-bg")) {
+                if (!this.canInteract) return;
+                this.selectionManager.clear().then(() => this.paintSelection());
+            }
+        });
+        this.svg.addEventListener("contextmenu", (e) => {
+            if ((e.target as Element).closest?.("[data-word]")) return;
+            e.preventDefault();
+            if (!this.canInteract) return;
+            this.selectionManager.showContextMenu({} as ISelectionId, { x: e.clientX, y: e.clientY });
+        });
+        // Marcadores y selección hecha desde fuera (sync de selección): repintar.
+        this.selectionManager.registerOnSelectCallback(() => this.paintSelection());
+    }
+
+    private get canInteract(): boolean {
+        return (this.host as any).allowInteractions !== false;
+    }
+
+    private t(key: string, fallback: string): string {
+        try { const v = this.loc.getDisplayName(key); return v && v !== key ? v : fallback; } catch { return fallback; }
+    }
+
+    private injectStyles(): void {
+        const ID = "tcwc-styles";
+        if (document.getElementById(ID)) return;
+        const st = document.createElement("style");
+        st.id = ID;
+        st.textContent = [
+            ".tcwc text[data-word]{cursor:pointer;outline:none}",
+            ".tcwc text[data-word]:focus-visible{paint-order:stroke;stroke:#1F4E80;stroke-width:3px;stroke-linejoin:round}",
+            ".tcwc .tcwc-in{transition:opacity .45s ease, transform .45s cubic-bezier(.2,.8,.2,1)}",
+            "@media (prefers-reduced-motion: reduce){.tcwc .tcwc-in{transition:none!important}}",
+            ".tcwc-landing{font-family:'Segoe UI',sans-serif;color:#3D3929;padding:16px;box-sizing:border-box;height:100%;display:flex;flex-direction:column;justify-content:center;gap:8px}",
+            ".tcwc-landing h2{font-size:16px;margin:0 0 4px;color:#1F4E80}",
+            ".tcwc-landing ol{margin:0;padding-left:20px;font-size:12px;line-height:1.6}",
+            ".tcwc-landing p{margin:0;font-size:11px;color:#83827D}",
+        ].join("\n");
+        (document.head || this.root).appendChild(st);
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────
+
+    public update(options: VisualUpdateOptions): void {
+        this.events.renderingStarted(options);
+        const token = ++this.updateToken;
+        this.lastOptions = options;
+        try {
+            const dv = options.dataViews?.[0];
+            this.settings = readSettings(dv?.metadata?.objects);
+            const ok = this.readData(dv);
+            if (!ok) {
+                this.landing();
+                this.events.renderingFinished(options);
+                return;
+            }
+            // La forma por imagen se carga una vez y se cachea por contenido.
+            const s = this.settings;
+            const maskSrc = s.shape === "image" ? this.maskSource(dv) : null;
+            if (maskSrc) {
+                let p = this.masks.get(maskSrc);
+                if (!p) { p = CloudLayout.maskFromImage(document, maskSrc); this.masks.set(maskSrc, p); }
+                p.then(mask => {
+                    if (token === this.updateToken) this.render(options, mask);
+                    this.events.renderingFinished(options);
+                }).catch(err => this.events.renderingFailed(options, String(err)));
+                return;
+            }
+            this.render(options, null);
+            this.events.renderingFinished(options);
+        } catch (e) {
+            this.events.renderingFailed(options, String(e));
+            console.error("[WordCloud]", e);
+        }
+    }
+
+    private maskSource(dv: DataView | undefined): string | null {
+        const col = dv?.categorical?.values?.find(v => v.source.roles?.["maskImage"]);
+        const v = col?.values?.find(x => typeof x === "string" && /^data:image\//i.test(x as string));
+        return (v as string) || null;
+    }
+
+    /** Palabras con su peso, color de regla, resaltado e identidades. false = no hay datos. */
+    private readData(dv: DataView | undefined): boolean {
+        this.words = [];
+        const cat = dv?.categorical?.categories?.[0];
+        if (!cat || !cat.values?.length) return false;
+        const vals = dv.categorical.values || ([] as any);
+        const sizeCol = vals.find?.(v => v.source.roles?.["size"]);
+        const colorCol = vals.find?.(v => v.source.roles?.["colorBy"]);
+        const tipCols = (vals.filter?.(v => v.source.roles?.["tooltips"]) || []) as powerbi.DataViewValueColumn[];
+        this.hasHighlights = !!sizeCol?.highlights;
+        const isText = !!cat.source.roles?.["text"];
+        const s = this.settings;
+        const fmtSize = this.formatter(sizeCol?.source?.format, sizeCol);
+        const idOf = (i: number) => this.host.createSelectionIdBuilder().withCategory(cat, i).createSelectionId();
+        const ruleColorOf = (i: number): string | null => {
+            const o = cat.objects?.[i]?.["colors"]?.["wordColor"] as any;
+            return o?.solid?.color ?? null;
+        };
+        const num = (x: any) => (typeof x === "number" && Number.isFinite(x) ? x : null);
+
+        if (!isText) {
+            const seen = new Map<string, WordDatum>();
+            cat.values.forEach((raw, i) => {
+                if (raw === null || raw === undefined || raw === "") return;
+                const text0 = String(raw);
+                const text = s.lowerCase ? text0.toLowerCase() : text0;
+                const w = sizeCol ? num(sizeCol.values[i]) : 1;
+                if (w === null || w <= 0) return;
+                const key = text.toLowerCase();
+                let d = seen.get(key);
+                if (!d) {
+                    d = { key, text, weight: 0, colorValue: null, rows: [], ids: [], highlighted: !this.hasHighlights, ruleColor: ruleColorOf(i), tooltipExtras: [] };
+                    seen.set(key, d);
+                }
+                d.weight += w;
+                d.rows.push(i); d.ids.push(idOf(i));
+                if (colorCol) d.colorValue = (d.colorValue ?? 0) + (num(colorCol.values[i]) ?? 0);
+                if (this.hasHighlights && num(sizeCol.highlights[i])) d.highlighted = true;
+                d.tooltipExtras = tipCols.map(c => ({ name: c.source.displayName, value: this.formatter(c.source.format, c)(c.values[i]) }));
+            });
+            this.words = Array.from(seen.values());
+        } else {
+            const langs = [["en", s.langEn], ["es", s.langEs], ["pt", s.langPt], ["fr", s.langFr], ["de", s.langDe], ["it", s.langIt]]
+                .filter(x => x[1]).map(x => x[0] as string);
+            const rows = cat.values.map((raw, i) => ({
+                text: raw === null || raw === undefined ? "" : String(raw),
+                weight: sizeCol ? (num(sizeCol.values[i]) ?? 0) : 1, row: i,
+            })).filter(r => r.weight > 0);
+            const toks = tokenize(rows, {
+                languages: langs, minLength: clamp(s.minLength, 1, 30),
+                exclude: (s.exclude || "").split(/[,;\n]/), lowerCase: !!s.lowerCase, bigrams: !!s.bigrams,
+            });
+            toks.forEach((v, key) => {
+                const hl = !this.hasHighlights || v.rows.some(r => num(sizeCol.highlights[r]));
+                this.words.push({
+                    key, text: v.display, weight: v.weight, colorValue: null, rows: v.rows,
+                    ids: v.rows.slice(0, 200).map(idOf), highlighted: hl, ruleColor: ruleColorOf(v.rows[0]), tooltipExtras: [],
+                });
+            });
+        }
+        this.words.sort((a, b) => b.weight - a.weight || a.text.localeCompare(b.text));
+        this.words = this.words.slice(0, clamp(s.maxWords, 1, 1000));
+        (this as any).fmtSize = fmtSize;
+        return this.words.length > 0;
+    }
+
+    private formatter(format: string | undefined, col?: powerbi.DataViewValueColumn): (v: any) => string {
+        const values = (col?.values || []).filter(v => typeof v === "number") as number[];
+        const max = values.length ? Math.max(...values.map(Math.abs)) : 0;
+        try {
+            const f = valueFormatter.create({ format: format || "", value: max >= 1000 ? max : 0, cultureSelector: this.host.locale, displayUnitSystemType: 2 } as any);
+            return (v: any) => (v === null || v === undefined ? "" : typeof v === "number" ? f.format(v) : String(v));
+        } catch {
+            return (v: any) => (v === null || v === undefined ? "" : String(v));
+        }
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    private render(options: VisualUpdateOptions, mask: { width: number; height: number; data: Uint8Array } | null): void {
+        const s = this.settings;
+        const W = Math.floor(options.viewport.width), H = Math.floor(options.viewport.height);
+        const svg = this.svg;
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        this.root.querySelector(".tcwc-landing")?.remove();
+        svg.style.display = "";
+        svg.setAttribute("width", String(W)); svg.setAttribute("height", String(H));
+        svg.setAttribute("aria-label", this.t("UI_AriaCloud", "Word cloud") + ", " + this.words.length + " " + this.t("UI_AriaWords", "words"));
+
+        const pal = this.host.colorPalette as any;
+        const hc = !!pal.isHighContrast;
+        const bg = hc ? pal.background?.value : s.background;
+        const bgRect = document.createElementNS(SVG, "rect");
+        bgRect.setAttribute("width", String(W)); bgRect.setAttribute("height", String(H));
+        bgRect.setAttribute("fill", bg || "transparent"); bgRect.setAttribute("data-bg", "1");
+        svg.appendChild(bgRect);
+
+        // Escala de tamaño: el mayor peso -> maxFont, el menor -> minFont.
+        const ws = this.words.map(w => w.weight);
+        const wMax = Math.max(...ws), wMin = Math.min(...ws);
+        const f = s.scale === "log" ? Math.log1p : s.scale === "sqrt" ? Math.sqrt : (x: number) => x;
+        const lo = f(Math.max(0, wMin)), hi = f(Math.max(0, wMax));
+        // El tamaño máximo se acota al visual: en un visual pequeño, palabras pequeñas.
+        const maxFont0 = Math.min(clamp(s.maxFont, 6, 300), H * 0.35, W * 0.2);
+        const minFont0 = Math.min(clamp(s.minFont, 4, 200), maxFont0);
+        const angles = this.angles();
+        const family = s.fontFamily || DEFAULTS.fontFamily;
+        const weight = s.bold ? "700" : "400";
+
+        let factor = 1;
+        let result = null as ReturnType<CloudLayout["run"]>;
+        for (let attempt = 0; attempt < (s.fit ? 5 : 1); attempt++) {
+            const lw: LayoutWord[] = this.words.map((w, i) => ({
+                text: w.text, index: i,
+                size: Math.max(4, (minFont0 + (hi > lo ? (f(Math.max(0, w.weight)) - lo) / (hi - lo) : 1) * (maxFont0 - minFont0)) * factor),
+            }));
+            result = this.layout.run(lw, {
+                width: W, height: H, fontFamily: family, fontWeight: weight, padding: clamp(s.padding, 0, 20),
+                angles, jitter: clamp(s.jitter, 0, 100) / 100, seed: Math.round(s.seed) || 0,
+                shape: (s.shape as ShapeName) || "rectangle", imageMask: mask, timeBudgetMs: 900,
+            });
+            // Ajustar: si se quedan fuera palabras de las primeras (las más importantes),
+            // encoger todo y repetir. Unas pocas pequeñas fuera no justifican encoger.
+            const lostTop = result.dropped.some(d => d.index < Math.ceil(this.words.length * 0.6));
+            if (!s.fit || !lostTop) break;
+            factor *= 0.82;
+        }
+        this.placed = result.placed;
+
+        // Colores
+        const cvs = this.words.map(w => w.colorValue).filter(v => v !== null) as number[];
+        const cMin = cvs.length ? Math.min(...cvs) : 0, cMax = cvs.length ? Math.max(...cvs) : 1;
+        const colorOf = (w: WordDatum): string => {
+            if (hc) return pal.foreground?.value ?? "#000";
+            if (w.ruleColor && s.colorMode !== "theme") return w.ruleColor;
+            switch (s.colorMode) {
+                case "single": return w.ruleColor || s.wordColor;
+                case "size": return mix(s.lowColor, s.highColor, hi > lo ? (f(Math.max(0, w.weight)) - lo) / (hi - lo) : 1);
+                case "measure": return w.colorValue === null ? s.lowColor : mix(s.lowColor, s.highColor, cMax > cMin ? (w.colorValue - cMin) / (cMax - cMin) : 1);
+                default: return w.ruleColor || pal.getColor(w.key).value;
+            }
+        };
+
+        // Animar solo cuando cambian los datos o el aspecto, no al seleccionar ni al redimensionar.
+        const key = JSON.stringify([this.words.map(w => w.key + ":" + w.weight), s, W > 0, H > 0]);
+        const animate = s.animate && key !== this.lastKey;
+        this.lastKey = key;
+
+        const g = document.createElementNS(SVG, "g");
+        svg.appendChild(g);
+        // Orden de lectura y de tabulación: de la palabra más importante a la menos.
+        const order = this.placed.slice().sort((a, b) => a.index - b.index);
+        order.forEach((p, rank) => {
+            const w = this.words[p.index];
+            const el = document.createElementNS(SVG, "text");
+            el.textContent = p.text;
+            el.setAttribute("data-word", String(p.index));
+            el.setAttribute("x", String(p.x)); el.setAttribute("y", String(p.y));
+            el.setAttribute("text-anchor", "middle");
+            el.setAttribute("font-size", String(p.size));
+            el.setAttribute("font-family", family);
+            el.setAttribute("font-weight", weight);
+            el.setAttribute("fill", colorOf(w));
+            el.setAttribute("role", "option");
+            el.setAttribute("tabindex", rank === this.focusIndex ? "0" : "-1");
+            el.setAttribute("aria-label", `${w.text}, ${(this as any).fmtSize(w.weight)}`);
+            const rot = p.rotate ? ` rotate(${p.rotate} ${p.x} ${p.y})` : "";
+            if (animate) {
+                el.setAttribute("class", "tcwc-in");
+                el.style.opacity = "0";
+                el.style.transformOrigin = `${p.x}px ${p.y}px`;
+                el.style.transform = "scale(0.6)";
+                el.style.transitionDelay = `${Math.min(rank * 12, 500)}ms`;
+            }
+            if (rot) el.setAttribute("transform", rot.trim());
+            this.wire(el, w, rank, order.length);
+            g.appendChild(el);
+        });
+        if (animate) {
+            // Doble frame: el navegador pinta el estado inicial antes de la transición.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                g.querySelectorAll<SVGTextElement>("text.tcwc-in").forEach(t => { t.style.opacity = ""; t.style.transform = ""; });
+            }));
+        }
+        this.paintSelection();
+    }
+
+    private angles(): number[] {
+        const s = this.settings;
+        switch (s.orientation) {
+            case "vertical": return [-90];
+            case "mixed": {
+                const share = clamp(s.verticalShare, 0, 100) / 100;
+                // 20 huecos: la proporción de verticales sale de la elección con semilla.
+                const n = Math.round(share * 20);
+                return Array.from({ length: 20 }, (_, i) => (i < n ? -90 : 0));
+            }
+            case "custom": {
+                const a = clamp(s.fromAngle, -90, 90), b = clamp(s.toAngle, -90, 90), n = clamp(Math.round(s.steps), 1, 12);
+                return n === 1 ? [a] : Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
+            }
+            default: return [0];
+        }
+    }
+
+    // ── Interacción ───────────────────────────────────────────────────────────
+
+    private wire(el: SVGTextElement, w: WordDatum, rank: number, total: number): void {
+        el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.keyboardNav = false;
+            this.select(w, e.ctrlKey || e.metaKey);
+        });
+        el.addEventListener("contextmenu", (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (!this.canInteract) return;
+            this.selectionManager.showContextMenu(w.ids[0] ?? ({} as ISelectionId), { x: e.clientX, y: e.clientY });
+        });
+        el.addEventListener("mousemove", (e) => this.showTooltip(w, e.clientX, e.clientY));
+        el.addEventListener("mouseleave", () => this.host.tooltipService.hide({ immediately: false, isTouchEvent: false }));
+        el.addEventListener("keydown", (e: KeyboardEvent) => {
+            this.keyboardNav = true;
+            const go = (i: number) => {
+                const all = Array.from(this.svg.querySelectorAll<SVGTextElement>("text[data-word]"));
+                const j = (i + all.length) % all.length;
+                all.forEach((t, k) => t.setAttribute("tabindex", k === j ? "0" : "-1"));
+                this.focusIndex = j;
+                all[j]?.focus();
+            };
+            let handled = true;
+            switch (e.key) {
+                case "ArrowRight": case "ArrowDown": go(rank + 1); break;
+                case "ArrowLeft": case "ArrowUp": go(rank - 1); break;
+                case "Home": go(0); break;
+                case "End": go(total - 1); break;
+                case "Enter": case " ": this.select(w, e.ctrlKey || e.metaKey); break;
+                case "Escape": if (this.canInteract) this.selectionManager.clear().then(() => this.paintSelection()); break;
+                case "ContextMenu": {
+                    const r = el.getBoundingClientRect();
+                    if (this.canInteract) this.selectionManager.showContextMenu(w.ids[0] ?? ({} as ISelectionId), { x: r.left + r.width / 2, y: r.top });
+                    break;
+                }
+                case "F10":
+                    if (e.shiftKey && this.canInteract) {
+                        const r = el.getBoundingClientRect();
+                        this.selectionManager.showContextMenu(w.ids[0] ?? ({} as ISelectionId), { x: r.left + r.width / 2, y: r.top });
+                    } else handled = false;
+                    break;
+                default: handled = false;
+            }
+            if (handled) { e.preventDefault(); e.stopPropagation(); }
+        });
+    }
+
+    private select(w: WordDatum, multi: boolean): void {
+        if (!this.canInteract || !w.ids.length) return;
+        this.selectionManager.select(w.ids, multi).then(() => this.paintSelection());
+    }
+
+    private showTooltip(w: WordDatum, x: number, y: number): void {
+        const items: powerbi.extensibility.VisualTooltipDataItem[] = [
+            { displayName: this.t("UI_TipWord", "Word"), value: w.text },
+            { displayName: this.t("UI_TipSize", "Size"), value: (this as any).fmtSize(w.weight) },
+        ];
+        if (w.rows.length > 1) items.push({ displayName: this.t("UI_TipRows", "Rows"), value: String(w.rows.length) });
+        for (const t of w.tooltipExtras) items.push({ displayName: t.name, value: t.value });
+        this.host.tooltipService.show({ dataItems: items as any, identities: w.ids.slice(0, 1), coordinates: [x, y], isTouchEvent: false });
+    }
+
+    /** Opacidad según selección propia y resaltado que llega de otros visuales. */
+    private paintSelection(): void {
+        const sel = this.selectionManager.getSelectionIds() as ISelectionId[];
+        const has = sel.length > 0;
+        const isSel = (w: WordDatum) => w.ids.some(id => sel.some(s => (s as any).equals?.(id)));
+        this.svg.querySelectorAll<SVGTextElement>("text[data-word]").forEach(el => {
+            const w = this.words[Number(el.getAttribute("data-word"))];
+            if (!w) return;
+            const on = has ? isSel(w) : w.highlighted;
+            el.setAttribute("opacity", on ? "1" : "0.25");
+            el.setAttribute("aria-selected", has && on ? "true" : "false");
+        });
+        if (this.keyboardNav) {
+            const f = this.svg.querySelector<SVGTextElement>(`text[data-word][tabindex="0"]`);
+            f?.focus();
+        }
+    }
+
+    // ── Página de inicio (asistente de configuración) ─────────────────────────
+
+    private landing(): void {
+        while (this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+        this.svg.style.display = "none";
+        this.root.querySelector(".tcwc-landing")?.remove();
+        const box = document.createElement("div");
+        box.className = "tcwc-landing";
+        const h = document.createElement("h2");
+        h.textContent = this.t("UI_LandingTitle", "Word Cloud by TCViz");
+        const ol = document.createElement("ol");
+        for (const [k, fb] of [
+            ["UI_Step1", "Drag a column of words to Words — or comments and answers to Text (free text)."],
+            ["UI_Step2", "Optional: a measure to Size. Without it, each word counts how often it appears."],
+            ["UI_Step3", "Pick a look in Format > Style template, then a Shape and an Orientation."],
+        ]) {
+            const li = document.createElement("li"); li.textContent = this.t(k, fb); ol.appendChild(li);
+        }
+        const p = document.createElement("p");
+        p.textContent = this.t("UI_LandingHelp", "Guide, examples and FAQ: tinocallarisa-web.github.io/word-cloud");
+        box.append(h, ol, p);
+        this.root.appendChild(box);
+    }
+
+    // ── Panel de formato ──────────────────────────────────────────────────────
+
+    public getFormattingModel(): powerbi.visuals.FormattingModel {
+        const s = this.settings;
+        const T = (k: string, fb: string) => this.t(k, fb);
+        const d = (obj: string, prop: string) => ({ objectName: obj, propertyName: prop });
+        const num = (obj: string, prop: string, name: string, v: number) => ({ uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name), control: { type: powerbi.visuals.FormattingComponent.NumUpDown, properties: { descriptor: d(obj, prop), value: v } } });
+        const tog = (obj: string, prop: string, name: string, v: boolean) => ({ uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name), control: { type: powerbi.visuals.FormattingComponent.ToggleSwitch, properties: { descriptor: d(obj, prop), value: v } } });
+        const txt = (obj: string, prop: string, name: string, v: string) => ({ uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name), control: { type: powerbi.visuals.FormattingComponent.TextInput, properties: { descriptor: d(obj, prop), value: v, placeholder: "" } } });
+        const font = (obj: string, prop: string, name: string, v: string) => ({ uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name), control: { type: powerbi.visuals.FormattingComponent.FontPicker, properties: { descriptor: d(obj, prop), value: v } } });
+        const col = (obj: string, prop: string, name: string, v: string, cf = false) => ({
+            uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name),
+            control: { type: powerbi.visuals.FormattingComponent.ColorPicker, properties: {
+                descriptor: { ...d(obj, prop), ...(cf ? {
+                    // 3 = Constant | Rule (const enum, no existe en runtime): muestra el botón fx.
+                    instanceKind: 3 as any,
+                    selector: { data: [{ dataViewWildcard: { matchingOption: 0 } }] } as any,
+                } : {}) },
+                value: { value: v || "" },
+            } },
+        });
+        const dd = (obj: string, prop: string, name: string, v: string, items: [string, string, string][]) => {
+            const list = items.map(([value, key, fb]) => ({ value, displayName: T(key, fb) }));
+            return { uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name),
+                control: { type: powerbi.visuals.FormattingComponent.Dropdown, properties: { descriptor: d(obj, prop), value: list.find(x => x.value === v) ?? list[0] } } };
+        };
+        const card = (obj: string, name: string, slices: any[]) => ({ uid: `${obj}_card`, displayName: T(`Obj_${obj}`, name), groups: [{ uid: `${obj}_g`, displayName: "", slices }] });
+
+        return {
+            cards: [
+                card("style", "Style template", [
+                    dd("style", "template", "Template", s.template, [
+                        ["none", "Enum_tpl_none", "None"], ["clean", "Enum_tpl_clean", "Clean"], ["bold", "Enum_tpl_bold", "Bold"],
+                        ["editorial", "Enum_tpl_editorial", "Editorial"], ["mono", "Enum_tpl_mono", "Monochrome"], ["poster", "Enum_tpl_poster", "Poster"]]),
+                ]),
+                card("words", "Words", [
+                    num("words", "maxWords", "Maximum words", s.maxWords),
+                    num("words", "minFont", "Smallest font size", s.minFont),
+                    num("words", "maxFont", "Largest font size", s.maxFont),
+                    dd("words", "scale", "Size scale", s.scale, [["linear", "Enum_scale_linear", "Linear"], ["sqrt", "Enum_scale_sqrt", "Square root"], ["log", "Enum_scale_log", "Logarithmic"]]),
+                    font("words", "fontFamily", "Font", s.fontFamily),
+                    tog("words", "bold", "Bold", s.bold),
+                    num("words", "padding", "Spacing", s.padding),
+                    tog("words", "lowerCase", "Lower case", s.lowerCase),
+                    tog("words", "fit", "Shrink to fit all words", s.fit),
+                ]),
+                card("freeText", "Free text", [
+                    tog("freeText", "langEn", "English stopwords", s.langEn),
+                    tog("freeText", "langEs", "Spanish stopwords", s.langEs),
+                    tog("freeText", "langPt", "Portuguese stopwords", s.langPt),
+                    tog("freeText", "langFr", "French stopwords", s.langFr),
+                    tog("freeText", "langDe", "German stopwords", s.langDe),
+                    tog("freeText", "langIt", "Italian stopwords", s.langIt),
+                    num("freeText", "minLength", "Minimum word length", s.minLength),
+                    txt("freeText", "exclude", "Exclude words (comma separated)", s.exclude),
+                    tog("freeText", "bigrams", "Include two-word phrases", s.bigrams),
+                ]),
+                card("orientation", "Orientation", [
+                    dd("orientation", "mode", "Words", s.orientation, [["horizontal", "Enum_or_horizontal", "Horizontal"], ["mixed", "Enum_or_mixed", "Horizontal and vertical"], ["vertical", "Enum_or_vertical", "Vertical"], ["custom", "Enum_or_custom", "Custom angles"]]),
+                    num("orientation", "verticalShare", "Vertical words %", s.verticalShare),
+                    num("orientation", "fromAngle", "From angle", s.fromAngle),
+                    num("orientation", "toAngle", "To angle", s.toAngle),
+                    num("orientation", "steps", "Number of angles", s.steps),
+                ]),
+                card("layout", "Layout", [
+                    dd("layout", "shape", "Shape", s.shape, [["rectangle", "Enum_sh_rectangle", "Rectangle"], ["ellipse", "Enum_sh_ellipse", "Ellipse"], ["circle", "Enum_sh_circle", "Circle"],
+                        ["diamond", "Enum_sh_diamond", "Diamond"], ["triangle", "Enum_sh_triangle", "Triangle"], ["star", "Enum_sh_star", "Star"], ["heart", "Enum_sh_heart", "Heart"],
+                        ["cloud", "Enum_sh_cloud", "Cloud"], ["image", "Enum_sh_image", "Image (Shape image field)"]]),
+                    num("layout", "jitter", "Jitter %", s.jitter),
+                    num("layout", "seed", "Seed", s.seed),
+                    tog("layout", "animate", "Animate", s.animate),
+                ]),
+                card("colors", "Colors", [
+                    dd("colors", "mode", "Color by", s.colorMode, [["theme", "Enum_col_theme", "Theme palette"], ["single", "Enum_col_single", "Single color"], ["size", "Enum_col_size", "Gradient by size"], ["measure", "Enum_col_measure", "Gradient by Color by field"]]),
+                    col("colors", "wordColor", "Word color", s.wordColor, true),
+                    col("colors", "lowColor", "Low color", s.lowColor),
+                    col("colors", "highColor", "High color", s.highColor),
+                    col("colors", "background", "Background", s.background),
+                ]),
+            ],
+        } as any;
+    }
+}
