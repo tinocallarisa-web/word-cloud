@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy – Word Cloud by TCViz</title>
+<style>
+  :root {
+    --bg: #FAF9F5; --bg2: #EDE9DE; --bd: #F5F3ED; --line: #DAD9D4;
+    --t1: #3D3929; --t2: #535146; --t3: #83827D;
+    --acc: #2B6CB0; --accd: #1F4E80; --acc2: #3E9C5B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--t1); line-height: 1.65; }
+
+  /* ── Header ── */
+  header { background: var(--t1); color: #fff; padding: 28px 48px; display: flex; align-items: center; gap: 20px; }
+  header svg { flex-shrink: 0; }
+  header .title { font-size: 22px; font-weight: 700; }
+  header .sub   { font-size: 13px; color: #b5b3aa; margin-top: 2px; }
+
+  /* ── Nav ── */
+  nav { background: var(--bg2); border-bottom: 1px solid var(--line); padding: 0 48px; display: flex; gap: 0; overflow-x: auto; }
+  nav a { display: block; padding: 14px 14px; white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--t2);
+          text-decoration: none; border-bottom: 3px solid transparent; transition: color .2s, border-color .2s; }
+  nav a:hover, nav a.active { color: var(--acc); border-bottom-color: var(--acc); }
+
+  /* ── Layout ── */
+  .wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 17px; font-weight: 700; color: var(--t1); margin: 40px 0 12px; padding-bottom: 8px;
+       border-bottom: 2px solid var(--acc); display: inline-block; }
+  h3 { font-size: 14px; font-weight: 700; color: var(--t1); margin: 18px 0 6px; }
+  p  { font-size: 14px; color: var(--t2); margin-bottom: 10px; }
+  ul { font-size: 14px; color: var(--t2); padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 5px; }
+  code { font-family: monospace; background: var(--bg2); padding: 1px 6px; border-radius: 4px;
+         font-size: 12px; color: var(--acc); }
+
+  /* ── Cards ── */
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 24px 28px; margin-bottom: 16px; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+           text-transform: uppercase; letter-spacing: .5px; vertical-align: middle; margin-left: 6px; }
+  .badge-pro  { background: var(--acc2); color: #fff; }
+  .badge-free { background: var(--acc);  color: #fff; }
+
+  /* ── Field wells table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+  th { background: var(--bg2); color: var(--t1); font-weight: 700; padding: 10px 14px; text-align: left;
+       border-bottom: 2px solid var(--line); }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--bd); color: var(--t2); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── FAQ ── */
+  details { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; background: #fff; }
+  summary { padding: 14px 18px; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none;
+            display: flex; align-items: center; justify-content: space-between; color: var(--t1); }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-size: 18px; font-weight: 300; color: var(--acc); transition: transform .2s; }
+  details[open] summary::after { content: '−'; }
+  details[open] summary { border-bottom: 1px solid var(--line); }
+  .faq-body { padding: 14px 18px; font-size: 14px; color: var(--t2); }
+  .faq-body p { margin-bottom: 6px; }
+  .faq-body ul { margin-top: 6px; }
+
+  /* ── Contact box ── */
+  .contact-box { background: var(--acc); color: #fff; border-radius: 10px; padding: 24px 28px;
+                  display: flex; align-items: center; gap: 20px; }
+  .contact-box .icon { font-size: 36px; flex-shrink: 0; }
+  .contact-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+  .contact-box p  { font-size: 13px; color: rgba(255,255,255,.85); margin: 0; }
+  .contact-box a  { color: #fff; font-weight: 700; text-decoration: underline; }
+
+  /* ── Video embed ── */
+  .video-wrap { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 10px; overflow: hidden;
+                border: 1px solid var(--line); margin-bottom: 20px; }
+  .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+  /* ── CTA strip ── */
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .btn { display: inline-block; padding: 10px 22px; border-radius: 6px; font-size: 13px; font-weight: 700;
+          text-decoration: none; transition: background .2s; }
+  .btn-primary { background: var(--acc); color: #fff; }
+  .btn-primary:hover { background: var(--accd); }
+  .btn-outline { background: transparent; color: var(--acc); border: 2px solid var(--acc); }
+  .btn-outline:hover { background: var(--acc); color: #fff; }
+
+  /* ── Search ── */
+  .searchbar { background: var(--bg2); border-bottom: 1px solid var(--line); padding: 14px 48px 16px; }
+  .searchbox { position: relative; max-width: 900px; margin: 0 auto; display: flex; align-items: center;
+               gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; }
+  .searchbox:focus-within { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(43,108,176,.16); }
+  .searchbox svg { color: var(--t3); flex-shrink: 0; }
+  .searchbox input { flex: 1; border: none; outline: none; background: transparent; font: inherit;
+                     font-size: 14px; color: var(--t1); padding: 11px 0; }
+  .searchbox input::placeholder { color: var(--t3); }
+  .searchbox button { border: none; background: transparent; color: var(--t3); font-size: 20px;
+                      line-height: 1; cursor: pointer; padding: 0 2px; }
+  .searchbox button:hover { color: var(--acc); }
+  .search-status { max-width: 900px; margin: 8px auto 0; font-size: 12px; color: var(--t3); min-height: 16px; }
+  mark { background: #FCE8A8; color: var(--t1); border-radius: 2px; padding: 0 2px; }
+  .is-hidden { display: none !important; }
+
+  /* ── Version pill ── */
+  .verpill { display: block; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: .4px;
+             background: var(--bg2); color: var(--t2); border: 1px solid var(--line);
+             padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; }
+  .verpill a { color: var(--acc); text-decoration: none; }
+  .lead { font-size: 14px; line-height: 1.6; color: var(--t2); margin: 0 0 22px; }
+  .lead a { color: var(--acc); }
+
+  /* ── Footer ── */
+  footer { background: var(--t1); color: var(--t3); text-align: center; padding: 24px 48px; font-size: 12px; }
+  footer a { color: #b5b3aa; text-decoration: none; margin: 0 8px; }
+  footer a:hover { color: #fff; }
+.prose h2{display:block}
+</style>
+</head>
+<body>
+<!-- Header -->
+<header>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 828 362" width="90" height="40">
+    <defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1F4E80"/>
+      <stop offset=".55" stop-color="#2B6CB0"/>
+      <stop offset="1" stop-color="#3E9C5B"/>
+    </linearGradient></defs>
+    <g transform="translate(40,46)">
+      <rect x="22" y="20" width="150" height="150" rx="30" fill="none" stroke="url(#g)" stroke-width="11"/>
+      <g fill="url(#g)">
+        <rect x="42" y="110" width="20" height="58" rx="5"/>
+        <rect x="70" y="86" width="20" height="82" rx="5"/>
+        <rect x="98" y="62" width="20" height="106" rx="5"/>
+        <rect x="126" y="38" width="20" height="130" rx="5"/>
+      </g>
+    </g>
+    <text x="258" y="246" font-family="Poppins,sans-serif" font-weight="700" font-size="196" letter-spacing="-4">
+      <tspan fill="url(#g)">tc</tspan><tspan fill="#fff">viz</tspan>
+    </text>
+    <text x="264" y="306" font-family="Poppins,sans-serif" font-weight="500" font-size="31" letter-spacing="6.5" fill="#83827D">VISUALS TO POWER BI</text>
+  </svg>
+  <div>
+    <div class="title">Word Cloud by TCViz</div>
+    <div class="sub">Privacy Policy</div>
+  </div>
+</header>
+
+
+<div class="wrap prose">
+
+<h1>Privacy Policy</h1>
+<p><strong>Last updated:</strong> 9 October 2026 (version 1.0.0.0)</p>
+<h2>1. Overview</h2>
+<p>Word Cloud by TCViz is a Power BI custom visual developed by TCViz (Tino Callarisa). This policy describes how data is handled when you use it.</p>
+<h2>2. Data collection</h2>
+<p>The visual <strong>does not collect, transmit or store any data</strong>. Every calculation — splitting text into words, counting, language detection and the layout — happens inside Power BI, on the data of your report.</p>
+<h2>3. No network access</h2>
+<p>The visual declares <strong>no network privileges</strong> (<code>"privileges": []</code>), so Power BI does not let it make any web request. That is why the Shape image field only accepts images already stored in your model as Base64: a link to an image on a web server is not loaded.</p>
+<p>The <em>Open the guide</em> button on the start page asks Power BI to open this documentation in your browser; Power BI shows you the address and asks before opening it. The visual sends nothing.</p>
+<h2>4. Cookies and storage</h2>
+<p>No cookies, no browser storage, no licence check.</p>
+<h2>5. Third parties</h2>
+<p>No analytics, tracking or advertising. The icon shapes come from Tabler Icons (MIT licence) and are bundled inside the visual.</p>
+<h2>6. Contact</h2>
+<p><a href="mailto:support@tcviz.com">support@tcviz.com</a></p>
+
+</div>
+
+<footer>
+  <div style="margin-bottom:10px;">
+    <a href="https://tinocallarisa-web.github.io/word-cloud/privacy.html">Privacy Policy</a>
+    <a href="https://tinocallarisa-web.github.io/word-cloud/terms.html">Terms of Service</a>
+    <a href="changelog.html">Changelog</a>
+    <a href="https://github.com/tinocallarisa-web/word-cloud/discussions" target="_blank">Discussions</a>
+    <a href="https://github.com/tinocallarisa-web/word-cloud" target="_blank">GitHub</a>
+    <a href="https://tcviz.com" target="_blank">tcviz.com</a>
+  </div>
+  <p>© 2026 TCViz · Word Cloud by TCViz · <a href="mailto:support@tcviz.com">support@tcviz.com</a></p>
+</footer>
+
+</body>
+</html>

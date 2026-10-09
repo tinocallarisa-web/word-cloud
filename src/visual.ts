@@ -455,8 +455,15 @@ export class Visual implements IVisual {
             });
             toks.forEach((v, key) => {
                 const hl = !this.hasHighlights || v.rows.some(r => num(sizeCol.highlights[r]));
+                // Valor de color en texto libre: la media de las filas que contienen la palabra
+                // (p. ej. el sentimiento medio de los comentarios que la mencionan).
+                let colorValue: number | null = null;
+                if (colorCol) {
+                    const cv = v.rows.map(r => num(colorCol.values[r])).filter((x): x is number => x !== null);
+                    if (cv.length) colorValue = cv.reduce((a, b) => a + b, 0) / cv.length;
+                }
                 this.words.push({
-                    key, text: v.display, weight: v.weight, colorValue: null, rows: v.rows,
+                    key, text: v.display, weight: v.weight, colorValue, rows: v.rows,
                     ids: v.rows.slice(0, 200).map(idOf), highlighted: hl, ruleColor: ruleColorOf(v.rows[0]), tooltipExtras: [],
                 });
             });

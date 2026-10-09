@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and how-to
+    url: https://github.com/tinocallarisa-web/word-cloud/discussions
+    about: Ask and share examples in Discussions
+  - name: Documentation
+    url: https://tinocallarisa-web.github.io/word-cloud/support.html
+    about: Guide, FAQ and troubleshooting
+  - name: Email
+    url: mailto:support@tcviz.com
+    about: support@tcviz.com

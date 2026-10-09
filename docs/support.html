@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Cloud by TCViz – Support</title>
+<style>
+  :root {
+    --bg: #FAF9F5; --bg2: #EDE9DE; --bd: #F5F3ED; --line: #DAD9D4;
+    --t1: #3D3929; --t2: #535146; --t3: #83827D;
+    --acc: #2B6CB0; --accd: #1F4E80; --acc2: #3E9C5B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--t1); line-height: 1.65; }
+
+  /* ── Header ── */
+  header { background: var(--t1); color: #fff; padding: 28px 48px; display: flex; align-items: center; gap: 20px; }
+  header svg { flex-shrink: 0; }
+  header .title { font-size: 22px; font-weight: 700; }
+  header .sub   { font-size: 13px; color: #b5b3aa; margin-top: 2px; }
+
+  /* ── Nav ── */
+  nav { background: var(--bg2); border-bottom: 1px solid var(--line); padding: 0 48px; display: flex; gap: 0; overflow-x: auto; }
+  nav a { display: block; padding: 14px 14px; white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--t2);
+          text-decoration: none; border-bottom: 3px solid transparent; transition: color .2s, border-color .2s; }
+  nav a:hover, nav a.active { color: var(--acc); border-bottom-color: var(--acc); }
+
+  /* ── Layout ── */
+  .wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 17px; font-weight: 700; color: var(--t1); margin: 40px 0 12px; padding-bottom: 8px;
+       border-bottom: 2px solid var(--acc); display: inline-block; }
+  h3 { font-size: 14px; font-weight: 700; color: var(--t1); margin: 18px 0 6px; }
+  p  { font-size: 14px; color: var(--t2); margin-bottom: 10px; }
+  ul { font-size: 14px; color: var(--t2); padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 5px; }
+  code { font-family: monospace; background: var(--bg2); padding: 1px 6px; border-radius: 4px;
+         font-size: 12px; color: var(--acc); }
+
+  /* ── Cards ── */
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 24px 28px; margin-bottom: 16px; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+           text-transform: uppercase; letter-spacing: .5px; vertical-align: middle; margin-left: 6px; }
+  .badge-pro  { background: var(--acc2); color: #fff; }
+  .badge-free { background: var(--acc);  color: #fff; }
+
+  /* ── Field wells table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+  th { background: var(--bg2); color: var(--t1); font-weight: 700; padding: 10px 14px; text-align: left;
+       border-bottom: 2px solid var(--line); }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--bd); color: var(--t2); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── FAQ ── */
+  details { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; background: #fff; }
+  summary { padding: 14px 18px; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none;
+            display: flex; align-items: center; justify-content: space-between; color: var(--t1); }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-size: 18px; font-weight: 300; color: var(--acc); transition: transform .2s; }
+  details[open] summary::after { content: '−'; }
+  details[open] summary { border-bottom: 1px solid var(--line); }
+  .faq-body { padding: 14px 18px; font-size: 14px; color: var(--t2); }
+  .faq-body p { margin-bottom: 6px; }
+  .faq-body ul { margin-top: 6px; }
+
+  /* ── Contact box ── */
+  .contact-box { background: var(--acc); color: #fff; border-radius: 10px; padding: 24px 28px;
+                  display: flex; align-items: center; gap: 20px; }
+  .contact-box .icon { font-size: 36px; flex-shrink: 0; }
+  .contact-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+  .contact-box p  { font-size: 13px; color: rgba(255,255,255,.85); margin: 0; }
+  .contact-box a  { color: #fff; font-weight: 700; text-decoration: underline; }
+
+  /* ── Video embed ── */
+  .video-wrap { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 10px; overflow: hidden;
+                border: 1px solid var(--line); margin-bottom: 20px; }
+  .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+  /* ── CTA strip ── */
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .btn { display: inline-block; padding: 10px 22px; border-radius: 6px; font-size: 13px; font-weight: 700;
+          text-decoration: none; transition: background .2s; }
+  .btn-primary { background: var(--acc); color: #fff; }
+  .btn-primary:hover { background: var(--accd); }
+  .btn-outline { background: transparent; color: var(--acc); border: 2px solid var(--acc); }
+  .btn-outline:hover { background: var(--acc); color: #fff; }
+
+  /* ── Search ── */
+  .searchbar { background: var(--bg2); border-bottom: 1px solid var(--line); padding: 14px 48px 16px; }
+  .searchbox { position: relative; max-width: 900px; margin: 0 auto; display: flex; align-items: center;
+               gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; }
+  .searchbox:focus-within { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(43,108,176,.16); }
+  .searchbox svg { color: var(--t3); flex-shrink: 0; }
+  .searchbox input { flex: 1; border: none; outline: none; background: transparent; font: inherit;
+                     font-size: 14px; color: var(--t1); padding: 11px 0; }
+  .searchbox input::placeholder { color: var(--t3); }
+  .searchbox button { border: none; background: transparent; color: var(--t3); font-size: 20px;
+                      line-height: 1; cursor: pointer; padding: 0 2px; }
+  .searchbox button:hover { color: var(--acc); }
+  .search-status { max-width: 900px; margin: 8px auto 0; font-size: 12px; color: var(--t3); min-height: 16px; }
+  mark { background: #FCE8A8; color: var(--t1); border-radius: 2px; padding: 0 2px; }
+  .is-hidden { display: none !important; }
+
+  /* ── Version pill ── */
+  .verpill { display: block; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: .4px;
+             background: var(--bg2); color: var(--t2); border: 1px solid var(--line);
+             padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; }
+  .verpill a { color: var(--acc); text-decoration: none; }
+  .lead { font-size: 14px; line-height: 1.6; color: var(--t2); margin: 0 0 22px; }
+  .lead a { color: var(--acc); }
+
+  /* ── Footer ── */
+  footer { background: var(--t1); color: var(--t3); text-align: center; padding: 24px 48px; font-size: 12px; }
+  footer a { color: #b5b3aa; text-decoration: none; margin: 0 8px; }
+  footer a:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 828 362" width="90" height="40">
+    <defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1F4E80"/>
+      <stop offset=".55" stop-color="#2B6CB0"/>
+      <stop offset="1" stop-color="#3E9C5B"/>
+    </linearGradient></defs>
+    <g transform="translate(40,46)">
+      <rect x="22" y="20" width="150" height="150" rx="30" fill="none" stroke="url(#g)" stroke-width="11"/>
+      <g fill="url(#g)">
+        <rect x="42" y="110" width="20" height="58" rx="5"/>
+        <rect x="70" y="86" width="20" height="82" rx="5"/>
+        <rect x="98" y="62" width="20" height="106" rx="5"/>
+        <rect x="126" y="38" width="20" height="130" rx="5"/>
+      </g>
+    </g>
+    <text x="258" y="246" font-family="Poppins,sans-serif" font-weight="700" font-size="196" letter-spacing="-4">
+      <tspan fill="url(#g)">tc</tspan><tspan fill="#fff">viz</tspan>
+    </text>
+    <text x="264" y="306" font-family="Poppins,sans-serif" font-weight="500" font-size="31" letter-spacing="6.5" fill="#83827D">VISUALS TO POWER BI</text>
+  </svg>
+  <div>
+    <div class="title">Word Cloud by TCViz</div>
+    <div class="sub">Support &amp; Documentation</div>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav>
+  <a href="#quickstart" class="active">Quick Start</a>
+  <a href="#fields">Field Wells</a>
+  <a href="#format">Format Pane</a>
+  <a href="#interaction">Selection</a>
+  <a href="#accessibility">Accessibility</a>
+  <a href="#performance">Performance</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#faq">FAQ</a>
+  <a href="use-case.html">Use cases</a>
+  <a href="changelog.html">Changelog</a>
+  <a href="#contact">Contact</a>
+</nav>
+
+<!-- Search -->
+<div class="searchbar">
+  <div class="searchbox">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="docsearch" type="search" placeholder="Search the documentation — try &quot;shape&quot;, &quot;sentiment&quot;, &quot;stopwords&quot;…"
+           autocomplete="off" aria-label="Search the documentation">
+    <button id="searchclear" type="button" aria-label="Clear search" hidden>&times;</button>
+  </div>
+  <div id="searchstatus" class="search-status" role="status" aria-live="polite"></div>
+</div>
+
+<div class="wrap">
+
+  <div class="verpill">Visual v1.0.0.0 &nbsp;·&nbsp; docs updated 9 Oct 2026 &nbsp;·&nbsp; <a href="changelog.html">what's new</a></div>
+
+  <p class="lead"><strong>Free — every feature, no licence, no watermark.</strong> Supported Power BI features:
+  <strong>conditional formatting (fx)</strong> on word colour · <strong>format on the canvas</strong> (on-object) ·
+  cross-filtering, <strong>Ctrl+click multi-select</strong> and <strong>highlighting</strong> · <strong>bookmarks</strong> ·
+  drilldown on a hierarchy in Words · standard and <strong>report page tooltips</strong> · context menu · keyboard navigation
+  with ARIA labels · high contrast · <strong>number formats from the model</strong> · <strong>12 panel languages</strong> ·
+  data streaming past 30,000 rows in the Power BI service. Text analysis: free-text tokenizing, stopwords in 6 languages
+  with <strong>automatic language detection</strong>, two-word phrases, exclusion list. Look: <strong>shapes, 42 icons,
+  your own text or image</strong> as the outline of the cloud, 6 style templates, <strong>32 palettes (18 colour-blind
+  safe)</strong>, sentiment colouring.</p>
+
+  <!-- Quick Start -->
+  <h2 id="quickstart">Quick Start</h2>
+  <div class="card">
+    <h3>1. Add the visual to your report</h3>
+    <p>In Power BI Desktop, go to the Visualizations pane → click the three dots → <strong>Get more visuals</strong> → search for <em>Word Cloud by TCViz</em>.</p>
+    <h3>2. Choose your data</h3>
+    <ul>
+      <li><strong>You already have words</strong> (keywords, product names, tags): drag that column to <strong>Words</strong>.</li>
+      <li><strong>You have sentences</strong> (survey comments, ticket descriptions, reviews): drag that column to <strong>Text (free text)</strong>. The visual splits it into words, drops filler words (“the”, “and”, “que”…) and counts the rest.</li>
+    </ul>
+    <h3>3. Optional: a measure in Size</h3>
+    <p>Without it, each word is sized by how many times it appears. With it (sales, clicks, mentions), each word is sized by that measure.</p>
+    <h3>4. Pick a look</h3>
+    <p>Format → <strong>Style template</strong> gives you a finished design in one click (Clean, Bold, Editorial, Monochrome, Poster). Then choose a <strong>Shape</strong> and an <strong>Orientation</strong>. Anything you set by hand wins over the template.</p>
+  </div>
+
+  <!-- Field wells -->
+  <h2 id="fields">Field Wells</h2>
+  <table>
+    <tr><th>Well</th><th>Accepts</th><th>What it does</th></tr>
+    <tr><td><strong>Words</strong></td><td>1 column</td><td>One word or phrase per row. Supports a hierarchy for drilldown. Use either Words or Text, not both.</td></tr>
+    <tr><td><strong>Text (free text)</strong></td><td>1 column</td><td>Comments, answers, descriptions. The visual tokenizes them (Unicode-aware, so accents, Cyrillic and CJK characters are kept), removes stopwords and counts each word.</td></tr>
+    <tr><td><strong>Size</strong></td><td>1 measure</td><td>Weight of each word. Empty → number of occurrences. In Text mode the measure of each row is added to every word in that row.</td></tr>
+    <tr><td><strong>Color value</strong></td><td>1 measure</td><td>Drives the colour when Colors → Color by is <em>Gradient by Color value</em> or <em>Sentiment</em>. A sentiment score (negative to positive) works directly. In Text mode each word gets the <strong>average</strong> of the rows that contain it.</td></tr>
+    <tr><td><strong>Tooltips</strong></td><td>measures</td><td>Extra values in the tooltip.</td></tr>
+    <tr><td><strong>Shape image</strong></td><td>1 measure</td><td>A Base64 image (<code>data:image/png;base64,…</code>) stored in your model. Words fill its dark area when Layout → Shape is <em>Image</em>. Web links are not loaded, on purpose — see <a href="privacy.html">Privacy</a>.</td></tr>
+  </table>
+  <p>Limits: Power BI sends up to <strong>30,000 rows</strong> per block. In the Power BI service the visual asks for the next blocks automatically; Power BI Desktop only sends the first block to custom visuals, and the warning icon in the visual header says so. The cloud draws up to <strong>Maximum words</strong> (default 150, up to 1,000).</p>
+
+  <!-- Format pane -->
+  <h2 id="format">Format Pane</h2>
+  <div class="card">
+    <h3>Style template</h3>
+    <p><strong>None</strong>, <strong>Clean</strong> (default), <strong>Bold</strong>, <strong>Editorial</strong> (serif, ink tones), <strong>Monochrome</strong>, <strong>Poster</strong> (a heart icon with an outline). A template only fills in what you have not changed yourself.</p>
+  </div>
+  <div class="card">
+    <h3>Words</h3>
+    <table>
+      <tr><th>Setting</th><th>Default</th><th>Notes</th></tr>
+      <tr><td>Maximum words</td><td>150</td><td>1 to 1,000, the heaviest first.</td></tr>
+      <tr><td>Minimum / Maximum font size</td><td>10 / 64</td><td>The maximum is also capped by the visual size so a single word never fills the canvas.</td></tr>
+      <tr><td>Size scale</td><td>Square root</td><td>Linear, Square root or Logarithmic. Square root keeps small words readable when one word dominates.</td></tr>
+      <tr><td>Font, Bold, Italic, Underline</td><td>Segoe UI</td><td>Any font from the Power BI font list.</td></tr>
+      <tr><td>Padding</td><td>2</td><td>Space between words, in pixels.</td></tr>
+      <tr><td>Lower case</td><td>Off</td><td>Shows every word in lower case (counting in Text mode is always case-insensitive).</td></tr>
+      <tr><td>Shrink to fit all words</td><td>On</td><td>If some words do not fit, the cloud is redrawn smaller until they do.</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Free text</h3>
+    <table>
+      <tr><th>Setting</th><th>Default</th><th>Notes</th></tr>
+      <tr><td>Detect languages automatically</td><td>On</td><td>Finds which of English, Spanish, Portuguese, French, German and Italian your text uses and removes the stopwords of those languages. A language is detected when at least 5 of its own stopwords appear and they make up at least 1% of the words.</td></tr>
+      <tr><td>English / Spanish / Portuguese / French / German / Italian stopwords</td><td>English</td><td>Ticked languages are always used; automatic detection adds the others it finds.</td></tr>
+      <tr><td>Minimum word length</td><td>3</td><td>Shorter words are ignored.</td></tr>
+      <tr><td>Exclude words</td><td>—</td><td>Comma-separated, e.g. <code>product, company name</code>.</td></tr>
+      <tr><td>Include two-word phrases</td><td>Off</td><td>Adds pairs such as “customer service” or “late delivery”.</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Orientation</h3>
+    <p><strong>Horizontal</strong>, <strong>Vertical</strong>, <strong>Horizontal and vertical</strong> (with the % of vertical words) or <strong>Custom angles</strong>: from angle, to angle and number of angles (1–12) between them.</p>
+  </div>
+  <div class="card">
+    <h3>Layout</h3>
+    <table>
+      <tr><th>Setting</th><th>Default</th><th>Notes</th></tr>
+      <tr><td>Shape</td><td>Rectangle</td><td>Rectangle, Circle, Ellipse, Diamond, Triangle, Hexagon, <strong>Icon</strong> (42 icons), <strong>Text</strong> (words fill the letters of your own text) or <strong>Image</strong> (the Shape image field).</td></tr>
+      <tr><td>Stretch shape to fill</td><td>Off</td><td>Off keeps the proportions of the icon, text or image; on stretches it to the whole visual.</td></tr>
+      <tr><td>Show shape · colour · opacity</td><td>On · automatic · 12%</td><td>A light silhouette behind the words so the shape is visible.</td></tr>
+      <tr><td>Shape border · colour · width</td><td>Off · automatic · 2</td><td>An outline drawn just outside the shape.</td></tr>
+      <tr><td>Fill the shape · minimum fill size</td><td>On · 6</td><td>Fills the gaps with smaller repeats of your words so the shape reads clearly. Repeats are decoration: they are not counted, focused or announced twice.</td></tr>
+      <tr><td>Jitter %</td><td>15</td><td>How much the words wander from a perfect spiral. 0 is tidy, 100 is loose.</td></tr>
+      <tr><td>Seed</td><td>7</td><td>The same seed always draws the same cloud: your report looks identical every time it opens. Change it to try another arrangement.</td></tr>
+      <tr><td>Animate</td><td>On</td><td>A short fade-in when the cloud is drawn.</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Colors</h3>
+    <table>
+      <tr><th>Color by</th><th>What you get</th></tr>
+      <tr><td>Palette</td><td>One of 32 palettes. Each word keeps its colour when filters change. 18 are colour-blind safe (Okabe-Ito, Paul Tol, Viridis, Cividis and others), marked “(cb)”.</td></tr>
+      <tr><td>Theme colours</td><td>The colours of your report theme.</td></tr>
+      <tr><td>Single colour</td><td>One colour for every word.</td></tr>
+      <tr><td>Gradient by size</td><td>From Low colour to High colour by the Size value, or along a sequential palette.</td></tr>
+      <tr><td>Gradient by Color value</td><td>The same, driven by the Color value measure.</td></tr>
+      <tr><td>Sentiment</td><td>Diverging colours centred on zero: negative Color value red, around zero grey, positive green (or the diverging palette you choose).</td></tr>
+    </table>
+    <p><strong>fx</strong> on Word colour (rules, gradient or field value) overrides the colour of each word in Palette, Theme colours and Single colour modes.</p>
+    <p>Background: optional background colour. Empty keeps the visual transparent.</p>
+  </div>
+  <div class="card">
+    <h3>Format on the canvas</h3>
+    <p>In format mode, click the words to format them as text (font, size, colour) or click the shape or background to format those, without opening the Format pane.</p>
+  </div>
+
+  <!-- Interaction -->
+  <h2 id="interaction">Selection &amp; filtering</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Click</strong> a word to filter the rest of the page; <strong>Ctrl+click</strong> to add words; click the background to clear.</li>
+      <li>In <strong>Text</strong> mode a word stands for the rows that contain it, so clicking it filters to those rows (up to 200 rows per word).</li>
+      <li>Selections from other visuals <strong>highlight</strong> the words they touch and dim the rest.</li>
+      <li><strong>Bookmarks</strong> restore the selected words.</li>
+      <li><strong>Drilldown</strong> works with a hierarchy in <strong>Words</strong> (for example Category → Product). Free text has no hierarchy, so there is nothing to drill into: filter it instead.</li>
+      <li>Right-click a word for the Power BI context menu (Drill through, Include, Exclude…).</li>
+    </ul>
+  </div>
+
+  <!-- Accessibility -->
+  <h2 id="accessibility">Accessibility</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Keyboard:</strong> Tab into the visual, then <code>←</code> <code>→</code> <code>↑</code> <code>↓</code> move from word to word in order of weight, <code>Home</code>/<code>End</code> jump to the first and last, <code>Enter</code> or <code>Space</code> selects (<code>Ctrl</code> to add), <code>Esc</code> clears, <code>Shift+F10</code> opens the context menu.</li>
+      <li><strong>Screen readers:</strong> each word is announced with its value.</li>
+      <li><strong>High contrast:</strong> with a Windows high-contrast theme the words, shape and selection use the system colours.</li>
+      <li><strong>Show as a table</strong> lists the words and values.</li>
+      <li>18 colour-blind safe palettes.</li>
+    </ul>
+  </div>
+
+  <!-- Performance -->
+  <h2 id="performance">Performance &amp; limits</h2>
+  <div class="card">
+    <ul>
+      <li>The layout engine checks collisions pixel by pixel on a bit-packed grid, so a cloud of 150 words usually draws in well under a second.</li>
+      <li>Rows per block: 30,000. In the Power BI service further blocks are requested automatically; in Power BI Desktop only the first block arrives (a Power BI limit for custom visuals) and the warning icon tells you.</li>
+      <li>Words drawn: up to Maximum words (1,000 at most). If some do not fit, the warning icon says how many.</li>
+      <li>Shape image: kept in memory once per image, not reloaded on every filter.</li>
+    </ul>
+  </div>
+
+  <!-- Troubleshooting -->
+  <h2 id="troubleshooting">Troubleshooting</h2>
+  <table>
+    <tr><th>What you see</th><th>Why</th><th>What to do</th></tr>
+    <tr><td>A warning icon: “some words do not fit”</td><td>The visual is too small for the words and sizes asked for.</td><td>Enlarge the visual, lower Maximum words or the font sizes, or turn on Shrink to fit all words.</td></tr>
+    <tr><td>A warning icon about rows in Desktop</td><td>Power BI Desktop sends custom visuals only the first 30,000 rows.</td><td>Publish to the Power BI service, or aggregate the words in your model first.</td></tr>
+    <tr><td>“the”, “and”, “que” appear in the cloud</td><td>That language was not detected or is not selected.</td><td>Turn off automatic detection and tick the language, or add the words to Exclude words.</td></tr>
+    <tr><td>The Image shape shows a rectangle</td><td>The Shape image field is empty, is a web link, or is not a <code>data:image/…</code> value.</td><td>Store the image as Base64 text in the model and make it a measure.</td></tr>
+    <tr><td>Drill down does nothing</td><td>The field is in Text, or Words has a single level.</td><td>Put a hierarchy in Words.</td></tr>
+    <tr><td>The colours did not change with fx</td><td>Color by is a gradient or Sentiment, which take their colour from the values.</td><td>Set Colors → Color by to Palette, Theme colours or Single colour; fx applies to Word colour.</td></tr>
+    <tr><td>The cloud is blank</td><td>Neither Words nor Text has a field.</td><td>The start page lists the three steps; drag a column to Words or Text.</td></tr>
+  </table>
+
+  <!-- FAQ -->
+  <h2 id="faq">FAQ</h2>
+  <details><summary>Is it really free?</summary><div class="faq-body"><p>Yes. Every feature on this page is included, with no licence, no trial period and no watermark.</p></div></details>
+  <details><summary>Words or Text — which one do I use?</summary><div class="faq-body"><p><strong>Words</strong> when each row already holds one word or phrase (a keyword, a product, a tag). <strong>Text</strong> when each row holds sentences people wrote (comments, answers, reviews) and you want the visual to find the words for you.</p></div></details>
+  <details><summary>Why can I not drill down with free text?</summary><div class="faq-body"><p>Drilldown moves through the levels of a hierarchy. A column of comments has no levels: its words are worked out by the visual, not stored in the model. Use drilldown with a hierarchy in Words, and with free text click a word to filter the rows that contain it.</p></div></details>
+  <details><summary>Which languages does free text understand?</summary><div class="faq-body"><p>Tokenizing works for any language that separates words with spaces or punctuation. Stopword lists are built in for English, Spanish, Portuguese, French, German and Italian, and the visual detects which of them your text uses. For other languages, add the filler words to Exclude words.</p></div></details>
+  <details><summary>How do I colour words by sentiment?</summary><div class="faq-body"><p>Put a sentiment score (a measure where negative means negative) in <strong>Color value</strong> and set Colors → Color by to <strong>Sentiment</strong>. Words lean red below zero and green above. With free text, each word takes the average score of the comments that mention it — so you see which words come with complaints and which with praise. A 1–10 score works too: make a measure that subtracts the midpoint (e.g. <code>[Score] - 5.5</code>).</p></div></details>
+  <details><summary>Can I use my logo as the shape?</summary><div class="faq-body"><p>Yes. Store the image in the model as Base64 text (<code>data:image/png;base64,…</code>), put it in <strong>Shape image</strong> and set Layout → Shape to <strong>Image</strong>. Words fill the dark part of the image. A PNG with a transparent background works best.</p></div></details>
+  <details><summary>Can the shape be a word?</summary><div class="faq-body"><p>Yes: Layout → Shape → <strong>Text</strong>, and type it in Shape text. The cloud fills the letters.</p></div></details>
+  <details><summary>Why does the cloud look the same every time?</summary><div class="faq-body"><p>On purpose: the layout uses a fixed <strong>Seed</strong>, so your report does not reshuffle each time someone opens it. Change the seed for a different arrangement.</p></div></details>
+  <details><summary>What are the small repeated words inside the shape?</summary><div class="faq-body"><p>Fill the shape adds smaller copies of your words to fill gaps, so the outline reads clearly. They are decoration only: tooltips, counts and the keyboard use the real words. Turn Fill the shape off to remove them.</p></div></details>
+  <details><summary>Does it work with bookmarks?</summary><div class="faq-body"><p>Yes. Bookmarks keep the words you selected and show them selected when you return.</p></div></details>
+  <details><summary>Which languages is the Format pane in?</summary><div class="faq-body"><p>English, Spanish, French, German, Italian, Portuguese (Brazil and Portugal), Dutch, Polish, Japanese, Simplified Chinese and Korean. It follows the language of Power BI.</p></div></details>
+  <details><summary>Does my data leave Power BI?</summary><div class="faq-body"><p>No. The visual has no network permission: it cannot send or load anything. See <a href="privacy.html">Privacy</a>.</p></div></details>
+
+  <!-- Contact -->
+  <h2 id="contact">Contact &amp; Support</h2>
+  <div class="contact-box">
+    <div class="icon">✉️</div>
+    <div>
+      <h3>support@tcviz.com</h3>
+      <p>Questions, ideas or a bug? Email <a href="mailto:support@tcviz.com">support@tcviz.com</a>, ask in
+      <a href="https://github.com/tinocallarisa-web/word-cloud/discussions" target="_blank">GitHub Discussions</a> or
+      <a href="https://github.com/tinocallarisa-web/word-cloud/issues/new/choose" target="_blank">open an issue</a>.
+      Please include your Power BI version and, if you can, a screenshot.</p>
+    </div>
+  </div>
+  <div class="cta">
+    <a class="btn btn-outline" href="use-case.html">Use cases</a>
+    <a class="btn btn-outline" href="changelog.html">Changelog</a>
+  </div>
+
+</div>
+
+<footer>
+  <div style="margin-bottom:10px;">
+    <a href="https://tinocallarisa-web.github.io/word-cloud/privacy.html">Privacy Policy</a>
+    <a href="https://tinocallarisa-web.github.io/word-cloud/terms.html">Terms of Service</a>
+    <a href="changelog.html">Changelog</a>
+    <a href="https://github.com/tinocallarisa-web/word-cloud/discussions" target="_blank">Discussions</a>
+    <a href="https://github.com/tinocallarisa-web/word-cloud" target="_blank">GitHub</a>
+    <a href="https://tcviz.com" target="_blank">tcviz.com</a>
+  </div>
+  <p>© 2026 TCViz · Word Cloud by TCViz · <a href="mailto:support@tcviz.com">support@tcviz.com</a></p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Nav highlight (in-page anchors only) ────────────────────────────────────
+  document.querySelectorAll('nav a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      document.querySelectorAll('nav a').forEach(function (x) { x.classList.remove('active'); });
+      a.classList.add('active');
+    });
+  });
+
+  // ── Documentation search ────────────────────────────────────────────────────
+  var input  = document.getElementById('docsearch');
+  var clear  = document.getElementById('searchclear');
+  var status = document.getElementById('searchstatus');
+  var wrap   = document.querySelector('.wrap');
+  if (!input || !wrap) { return; }
+
+  var HIDE = 'is-hidden';
+
+  // Atomic searchable units: one FAQ entry, one table row, one card.
+  var units = [];
+  function add(el) {
+    if (units.some(function (u) { return u.el === el; })) { return; }
+    units.push({ el: el, html: el.innerHTML, text: (el.textContent || '').toLowerCase() });
+  }
+  wrap.querySelectorAll('details').forEach(add);
+  wrap.querySelectorAll('table tr').forEach(function (tr) {
+    if (tr.querySelector('th')) { return; }   // header rows follow their table
+    add(tr);
+  });
+  wrap.querySelectorAll('.card, .contact-box').forEach(add);
+
+  // Sections: an <h2> plus every sibling up to the next <h2>.
+  var sections = [];
+  var current = null;
+  Array.prototype.forEach.call(wrap.children, function (el) {
+    if (el.tagName === 'H2') {
+      current = { head: el, body: [] };
+      sections.push(current);
+    } else if (current) {
+      current.body.push(el);
+    }
+  });
+  // Each body element remembers which units live inside it.
+  sections.forEach(function (sec) {
+    sec.body.forEach(function (b) {
+      b._units = units.filter(function (u) { return b === u.el || b.contains(u.el); });
+      if (!b._units.length) { b._html = b.innerHTML; }
+    });
+  });
+
+  function escapeRe(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function escapeHtml(t) {
+    return t.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; });
+  }
+
+  function highlight(el, terms) {
+    var re = new RegExp('(' + terms.map(escapeRe).join('|') + ')', 'gi');
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    var nodes = [], n;
+    while ((n = walker.nextNode())) { nodes.push(n); }
+    nodes.forEach(function (node) {
+      var txt = node.nodeValue;
+      re.lastIndex = 0;
+      if (!re.test(txt)) { return; }
+      re.lastIndex = 0;
+      var span = document.createElement('span');
+      span.innerHTML = escapeHtml(txt).replace(re, '<mark>$1</mark>');
+      node.parentNode.replaceChild(span, node);
+    });
+  }
+
+  function showAll() {
+    units.forEach(function (u) { u.el.classList.remove(HIDE); u.el.innerHTML = u.html; });
+    sections.forEach(function (sec) {
+      sec.head.classList.remove(HIDE);
+      sec.body.forEach(function (b) {
+        b.classList.remove(HIDE);
+        if (b._html !== undefined) { b.innerHTML = b._html; }
+      });
+    });
+    status.textContent = '';
+    clear.hidden = true;
+  }
+
+  function run(q) {
+    q = (q || '').trim();
+    if (q.length < 2) { showAll(); return; }
+    clear.hidden = false;
+
+    var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    var hits = 0;
+
+    units.forEach(function (u) {
+      u.el.innerHTML = u.html;
+      var match = terms.every(function (t) { return u.text.indexOf(t) !== -1; });
+      u.el.classList.toggle(HIDE, !match);
+      if (match) {
+        hits++;
+        highlight(u.el, terms);
+        if (u.el.tagName === 'DETAILS') { u.el.open = true; }
+      }
+    });
+
+    sections.forEach(function (sec) {
+      var anyVisible = false;
+      sec.body.forEach(function (b) {
+        var visible;
+        if (b._units.length) {
+          visible = b._units.some(function (u) { return !u.el.classList.contains(HIDE); });
+        } else {
+          b.innerHTML = b._html;
+          var txt = (b.textContent || '').toLowerCase();
+          visible = terms.every(function (t) { return txt.indexOf(t) !== -1; });
+          if (visible) { highlight(b, terms); }
+        }
+        b.classList.toggle(HIDE, !visible);
+        if (visible) { anyVisible = true; }
+      });
+      sec.head.classList.toggle(HIDE, !anyVisible);
+    });
+
+    status.textContent = hits
+      ? hits + ' result' + (hits === 1 ? '' : 's') + ' for “' + q + '”'
+      : 'No results for “' + q + '”. Try a Format pane setting name, or email support@tcviz.com.';
+  }
+
+  var timer;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { run(input.value); }, 120);
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { input.value = ''; showAll(); }
+  });
+  clear.addEventListener('click', function () { input.value = ''; showAll(); input.focus(); });
+
+  // Deep link: support.html?q=license
+  var qp = new URLSearchParams(location.search).get('q');
+  if (qp) { input.value = qp; run(qp); }
+})();
+</script>
+</body>
+</html>
