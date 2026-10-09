@@ -171,6 +171,7 @@
   "UI_TipSize": "Tamaño",
   "UI_TipWord": "Palabra",
   "UI_WarnDropped": "Algunas palabras no caben: agranda el visual o baja Máximo de palabras o los tamaños de fuente.",
-  "UI_WarnRows": "Power BI solo ha enviado parte de las filas: la nube refleja las primeras 30.000.",
+  "UI_WarnRows": "Power BI solo ha enviado parte de las filas: la nube refleja las recibidas.",
+  "UI_WarnRowsDesktop": "Power BI Desktop solo envía a un visual las primeras filas: publica en el Servicio para contarlas todas.",
   "UI_WarnTitle": "Word Cloud"
 }

@@ -171,6 +171,7 @@
   "UI_TipSize": "Size",
   "UI_TipWord": "Word",
   "UI_WarnDropped": "Some words do not fit: enlarge the visual, lower Maximum words or the font sizes.",
-  "UI_WarnRows": "Power BI sent only part of the rows: the cloud reflects the first 30,000.",
+  "UI_WarnRows": "Power BI sent only part of the rows: the cloud reflects the rows received.",
+  "UI_WarnRowsDesktop": "Power BI Desktop sends a visual only the first rows: publish to the Service to count them all.",
   "UI_WarnTitle": "Word Cloud"
 }

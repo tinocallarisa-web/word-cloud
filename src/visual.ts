@@ -136,6 +136,11 @@ export class Visual implements IVisual {
     private images = new Map<string, Promise<HTMLImageElement | null>>();
     private maskCache: { key: string; mask: ShapeMask | null; hi: ShapeMask | null } | null = null;
     private dropped = 0;
+    /** Filas por bloques: Power BI entrega 30.000 cada vez; el visual pide las siguientes. */
+    private lastFetchCount = 0;
+    private fetchRounds = 0;
+    private truncatedAt = 0;
+    private readonly MAX_FETCH_ROUNDS = 60;
     private hasHighlights = false;
     private lastOptions: VisualUpdateOptions | null = null;
 
@@ -209,6 +214,12 @@ export class Visual implements IVisual {
         try {
             const dv = options.dataViews?.[0];
             this.settings = readSettings(dv?.metadata?.objects);
+            if (dv && this.streamSegments(options, dv)) {
+                // Se ha pedido el siguiente bloque: Power BI volverá a llamar a update() con
+                // todo junto. Dibujar ahora sería una nube parcial que se reemplaza enseguida.
+                this.events.renderingFinished(options);
+                return;
+            }
             const ok = this.readData(dv);
             if (!ok) {
                 this.landing();
@@ -242,12 +253,40 @@ export class Visual implements IVisual {
     private warnings(dv: DataView | undefined): void {
         const msgs: string[] = [];
         if (this.dropped > 0) msgs.push(this.t("UI_WarnDropped", "Some words do not fit: enlarge the visual, lower Maximum words or the font sizes.") + " (" + this.dropped + ")");
-        if (dv?.metadata?.segment) msgs.push(this.t("UI_WarnRows", "Power BI sent only part of the rows: the cloud reflects the first 30,000."));
+        if (this.truncatedAt) msgs.push((this.isDesktop
+            ? this.t("UI_WarnRowsDesktop", "Power BI Desktop sends a visual only the first rows: publish to the Service to count them all.")
+            : this.t("UI_WarnRows", "Power BI sent only part of the rows: the cloud reflects the rows received.")) + " (" + this.truncatedAt + ")");
         const host: any = this.host;
         if (typeof host.displayWarningIcon === "function") {
             if (msgs.length) host.displayWarningIcon(this.t("UI_WarnTitle", "Word Cloud"), msgs.join(" "));
             else if (typeof host.hideWarningIcon === "function") host.hideWarningIcon();
         }
+    }
+
+    private get isDesktop(): boolean {
+        const env = Number((this.host as any)?.hostEnv);
+        return isFinite(env) && env > 0 ? (env & 4) !== 0 : false;
+    }
+
+    /**
+     * Pide a Power BI los bloques de filas que faltan (más de 30.000: encuestas grandes en
+     * texto libre). Desktop no entrega bloques a los visuales: ahí se dibuja lo que llega y
+     * el icono de aviso lo dice.
+     */
+    private streamSegments(options: VisualUpdateOptions, dv: DataView): boolean {
+        // operationKind 1 = Append (continuación de un bloque). Otra cosa es una consulta nueva.
+        if ((options as any).operationKind !== 1) { this.lastFetchCount = 0; this.fetchRounds = 0; }
+        this.truncatedAt = 0;
+        if (!dv.metadata?.segment) return false;
+        const loaded = dv.categorical?.categories?.[0]?.values?.length ?? 0;
+        // Tres frenos: Desktop no puede; si no crece, Power BI está devolviendo lo mismo; y un tope de rondas.
+        if (!this.isDesktop && loaded > this.lastFetchCount && this.fetchRounds < this.MAX_FETCH_ROUNDS) {
+            this.lastFetchCount = loaded;
+            this.fetchRounds++;
+            if (this.host.fetchMoreData(true)) return true;
+        }
+        this.truncatedAt = loaded;
+        return false;
     }
 
     private maskSource(dv: DataView | undefined): string | null {
