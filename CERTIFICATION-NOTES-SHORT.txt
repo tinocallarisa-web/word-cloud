@@ -1,0 +1,40 @@
+Word Cloud by TCViz 1.0.0.0 - GUID wordCloudTCVizB25C9426AD9548F19EB64B83E0BD386E
+
+SOURCE CODE
+github.com/tinocallarisa-web/word-cloud, branch "certification".
+PUBLIC: no credentials needed, none included here.
+
+NO KEY NEEDED
+The visual is free: no licence, no IVisualLicenseManager, no paid features, nothing to
+unlock. Every feature works in the submitted package.
+
+PACKAGE WARNING - FetchMoreData
+pbiviz only detects fetchMoreData in table mappings. This visual uses a categorical
+mapping (window 30000) and calls host.fetchMoreData(true) in src/visual.ts
+(streamSegments), with operationKind Append handling and a 60-round cap. In Desktop the
+warning icon explains that only the first segment arrives.
+
+RENDERING EVENTS: one started/finished-or-failed pair per update(). The Shape image is
+decoded asynchronously; renderingFinished fires after it is drawn. Click repaints do
+not call update().
+PRIVACY: privileges []. No network calls, no telemetry. Shape images are Base64 only;
+the landing page link uses host.launchUrl.
+
+FEATURES
+Words or free text (tokenizer, stopwords en/es/pt/fr/de/it, language detection,
+bigrams). Shapes, 42 icons (Tabler, MIT), text, Base64 image. 32 palettes, fx on word
+colour (ConstantOrRule, wildcard selector), sentiment. Selection, Ctrl+click,
+highlight, bookmarks (registerOnSelectCallback), drilldown on Words, tooltips and
+report page tooltips, context menu, keyboard focus and ARIA, high contrast,
+on-object formatting, landing page, warning icon, 12 locales.
+
+WHAT TO CHECK
+1. Category field in Words, a measure in Size: the cloud draws, sized by the measure.
+2. A text column in Text instead: words are counted, stopwords removed.
+3. Click a word: the page filters. Ctrl+click a second. Save a bookmark, clear, apply
+   it: same words selected.
+4. Hierarchy in Words, drill mode on, click a word: it drills.
+5. Format > Layout > Shape: Icon, heart. Words fill the heart.
+6. Format mode: click a word, then the background: on-object panes open.
+
+Support: tinocallarisa-web.github.io/word-cloud/support.html
