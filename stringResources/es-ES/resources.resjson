@@ -162,11 +162,15 @@
   "UI_AriaCloud": "Nube de palabras",
   "UI_AriaWords": "palabras",
   "UI_LandingHelp": "Guía, ejemplos y preguntas frecuentes: tinocallarisa-web.github.io/word-cloud",
+  "UI_LandingOpen": "Abrir la guía",
   "UI_LandingTitle": "Word Cloud by TCViz",
   "UI_Step1": "Arrastra una columna de palabras a Palabras, o comentarios y respuestas a Texto (texto libre).",
   "UI_Step2": "Opcional: una medida en Tamaño. Sin ella, cada palabra cuenta cuántas veces aparece.",
   "UI_Step3": "Elige un aspecto en Formato > Plantilla de estilo, y después una Forma y una Orientación.",
   "UI_TipRows": "Filas",
   "UI_TipSize": "Tamaño",
-  "UI_TipWord": "Palabra"
+  "UI_TipWord": "Palabra",
+  "UI_WarnDropped": "Algunas palabras no caben: agranda el visual o baja Máximo de palabras o los tamaños de fuente.",
+  "UI_WarnRows": "Power BI solo ha enviado parte de las filas: la nube refleja las primeras 30.000.",
+  "UI_WarnTitle": "Word Cloud"
 }

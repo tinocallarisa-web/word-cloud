@@ -39,7 +39,9 @@ json.visual.displayName += " (test)";
 fs.writeFileSync(PBIVIZ_JSON, JSON.stringify(json, null, 2) + "\n", "utf8");
 
 try {
-    execSync("npx pbiviz package", { stdio: "inherit", cwd: __dirname });
+    // Opciones extra a pbiviz, p. ej. --verbose para ver las funciones opcionales que faltan.
+    const extra = process.argv.slice(2).join(" ");
+    execSync(("npx pbiviz package " + extra).trim(), { stdio: "inherit", cwd: __dirname });
     console.log("✅ Build de TEST completada. El .pbiviz está en dist/");
 } catch (e) {
     console.error("❌ La build ha fallado.");

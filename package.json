@@ -13,6 +13,7 @@
     "eslint": "npx eslint src"
   },
   "dependencies": {
+    "powerbi-visuals-utils-dataviewutils": "^6.1.0",
     "powerbi-visuals-utils-formattingutils": "6.1.2"
   },
   "overrides": {
@@ -30,5 +31,11 @@
     "typescript": "^5.5.4"
   },
   "license": "MIT",
-  "keywords": ["powerbi", "word cloud", "tag cloud", "text analysis", "visualization"]
+  "keywords": [
+    "powerbi",
+    "word cloud",
+    "tag cloud",
+    "text analysis",
+    "visualization"
+  ]
 }

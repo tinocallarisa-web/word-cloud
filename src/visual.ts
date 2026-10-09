@@ -2,6 +2,7 @@
 
 import powerbi from "powerbi-visuals-api";
 import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
+import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
 import { CloudLayout, LayoutWord, PlacedWord, ShapeMask, ShapeSpec } from "./layout";
 import { tokenize, detectLanguages } from "./text";
 import { ICONS } from "./icons";
@@ -133,7 +134,8 @@ export class Visual implements IVisual {
     private keyboardNav = false;
     private updateToken = 0;
     private images = new Map<string, Promise<HTMLImageElement | null>>();
-    private maskCache: { key: string; mask: ShapeMask | null } | null = null;
+    private maskCache: { key: string; mask: ShapeMask | null; hi: ShapeMask | null } | null = null;
+    private dropped = 0;
     private hasHighlights = false;
     private lastOptions: VisualUpdateOptions | null = null;
 
@@ -192,6 +194,8 @@ export class Visual implements IVisual {
             ".tcwc-landing h2{font-size:16px;margin:0 0 4px;color:#1F4E80}",
             ".tcwc-landing ol{margin:0;padding-left:20px;font-size:12px;line-height:1.6}",
             ".tcwc-landing p{margin:0;font-size:11px;color:#83827D}",
+            ".tcwc-link{border:1px solid #2B6CB0;background:transparent;color:#2B6CB0;border-radius:4px;padding:2px 8px;font:11px 'Segoe UI',sans-serif;cursor:pointer;margin-left:4px}",
+            ".tcwc-link:focus-visible{outline:2px solid #1F4E80;outline-offset:2px}",
         ].join("\n");
         (document.head || this.root).appendChild(st);
     }
@@ -217,16 +221,32 @@ export class Visual implements IVisual {
                 let p = this.images.get(src);
                 if (!p) { p = CloudLayout.loadImage(document, src); this.images.set(src, p); }
                 p.then(img => {
-                    if (token === this.updateToken) this.render(options, img);
+                    if (token === this.updateToken) { this.render(options, img); this.warnings(dv); }
                     this.events.renderingFinished(options);
                 }).catch(err => this.events.renderingFailed(options, String(err)));
                 return;
             }
             this.render(options, null);
+            this.warnings(dv);
             this.events.renderingFinished(options);
         } catch (e) {
             this.events.renderingFailed(options, String(e));
             console.error("[WordCloud]", e);
+        }
+    }
+
+    /**
+     * Icono de aviso de Power BI (el triángulo de la cabecera) cuando la nube no cuenta toda la
+     * historia: palabras que no caben, o filas que Power BI no ha entregado.
+     */
+    private warnings(dv: DataView | undefined): void {
+        const msgs: string[] = [];
+        if (this.dropped > 0) msgs.push(this.t("UI_WarnDropped", "Some words do not fit: enlarge the visual, lower Maximum words or the font sizes.") + " (" + this.dropped + ")");
+        if (dv?.metadata?.segment) msgs.push(this.t("UI_WarnRows", "Power BI sent only part of the rows: the cloud reflects the first 30,000."));
+        const host: any = this.host;
+        if (typeof host.displayWarningIcon === "function") {
+            if (msgs.length) host.displayWarningIcon(this.t("UI_WarnTitle", "Word Cloud"), msgs.join(" "));
+            else if (typeof host.hideWarningIcon === "function") host.hideWarningIcon();
         }
     }
 
@@ -336,12 +356,16 @@ export class Visual implements IVisual {
         key += "@" + W + "x" + H + (s.stretch ? ":stretch" : "");
         if (this.maskCache?.key === key) return this.maskCache.mask;
         const mask = this.layout.buildMask(spec, W, H, s.shape === "circle", !!s.stretch);
-        this.maskCache = { key, mask };
+        // La misma forma a más resolución, solo para lo que se ve (silueta y borde): en una
+        // pantalla con escalado al 150-200 % la imagen a 1x se veía borrosa.
+        const k = Math.min(2, Math.max(1, (window.devicePixelRatio || 1)));
+        const hi = mask && k > 1 ? this.layout.buildMask(spec, Math.round(W * k), Math.round(H * k), s.shape === "circle", !!s.stretch) : null;
+        this.maskCache = { key, mask, hi };
         return mask;
     }
 
     private addSilhouette(mask: ShapeMask, color: string, opacity: number, W: number, H: number): void {
-        const url = CloudLayout.silhouette(document, mask, color);
+        const url = CloudLayout.silhouette(document, this.maskCache?.hi || mask, color);
         if (!url) return;
         const im = document.createElementNS(SVG, "image");
         im.setAttribute("href", url); im.setAttribute("width", String(W)); im.setAttribute("height", String(H));
@@ -388,7 +412,8 @@ export class Visual implements IVisual {
             }
             // Borde: en alto contraste, del color del tema y siempre visible si está activado.
             if (s.outline) {
-                const url = CloudLayout.outline(document, mask, hc ? (pal.foreground?.value ?? "#000") : (s.outlineColor || s.silhouetteColor || auto), clamp(s.outlineWidth, 0, 20));
+                const hiM = this.maskCache?.hi || mask, kk = hiM.width / mask.width;
+                const url = CloudLayout.outline(document, hiM, hc ? (pal.foreground?.value ?? "#000") : (s.outlineColor || s.silhouetteColor || auto), clamp(s.outlineWidth, 0, 20) * kk);
                 if (url) {
                     const im = document.createElementNS(SVG, "image");
                     im.setAttribute("href", url); im.setAttribute("width", String(W)); im.setAttribute("height", String(H));
@@ -434,6 +459,7 @@ export class Visual implements IVisual {
             factor *= 0.82;
         }
         this.placed = result.placed;
+        this.dropped = result.dropped.length;
 
         // Colores
         const cvs = this.words.map(w => w.colorValue).filter(v => v !== null) as number[];
@@ -625,6 +651,13 @@ export class Visual implements IVisual {
         }
         const p = document.createElement("p");
         p.textContent = this.t("UI_LandingHelp", "Guide, examples and FAQ: tinocallarisa-web.github.io/word-cloud");
+        const link = document.createElement("button");
+        link.className = "tcwc-link";
+        link.textContent = this.t("UI_LandingOpen", "Open the guide");
+        // launchUrl: Power BI abre el enlace y avisa al usuario; el visual no navega por su cuenta.
+        link.addEventListener("click", () => this.host.launchUrl("https://tinocallarisa-web.github.io/word-cloud/support.html"));
+        p.appendChild(document.createTextNode(" "));
+        p.appendChild(link);
         box.append(h, ol, p);
         this.root.appendChild(box);
     }
@@ -643,9 +676,10 @@ export class Visual implements IVisual {
             uid: `${obj}_${prop}`, displayName: T(`Prop_${obj}_${prop}`, name),
             control: { type: powerbi.visuals.FormattingComponent.ColorPicker, properties: {
                 descriptor: { ...d(obj, prop), ...(cf ? {
-                    // 3 = Constant | Rule (const enum, no existe en runtime): muestra el botón fx.
-                    instanceKind: 3 as any,
-                    selector: { data: [{ dataViewWildcard: { matchingOption: 0 } }] } as any,
+                    // ConstantOrRule muestra el botón fx; pbiviz lo busca por este nombre.
+                    instanceKind: powerbi.VisualEnumerationInstanceKinds.ConstantOrRule,
+                    // El selector comodín da a Power BI dónde escribir el color que resuelve la regla.
+                    selector: dataViewWildcard.createDataViewWildcardSelector(dataViewWildcard.DataViewWildcardMatchingOption.InstancesAndTotals) as any,
                 } : {}) },
                 value: { value: v || "" },
             } },

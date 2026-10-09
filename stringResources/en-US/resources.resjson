@@ -162,11 +162,15 @@
   "UI_AriaCloud": "Word cloud",
   "UI_AriaWords": "words",
   "UI_LandingHelp": "Guide, examples and FAQ: tinocallarisa-web.github.io/word-cloud",
+  "UI_LandingOpen": "Open the guide",
   "UI_LandingTitle": "Word Cloud by TCViz",
   "UI_Step1": "Drag a column of words to Words — or comments and answers to Text (free text).",
   "UI_Step2": "Optional: a measure to Size. Without it, each word counts how often it appears.",
   "UI_Step3": "Pick a look in Format > Style template, then a Shape and an Orientation.",
   "UI_TipRows": "Rows",
   "UI_TipSize": "Size",
-  "UI_TipWord": "Word"
+  "UI_TipWord": "Word",
+  "UI_WarnDropped": "Some words do not fit: enlarge the visual, lower Maximum words or the font sizes.",
+  "UI_WarnRows": "Power BI sent only part of the rows: the cloud reflects the first 30,000.",
+  "UI_WarnTitle": "Word Cloud"
 }
