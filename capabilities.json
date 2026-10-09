@@ -24,9 +24,9 @@
     {
       "name": "colorBy",
       "kind": "Measure",
-      "displayName": "Color by",
+      "displayName": "Color value",
       "displayNameKey": "Role_colorBy",
-      "description": "Colour words on a gradient by this measure."
+      "description": "A measure that colours each word, independent of its size. Used by Format > Colors > Color by: Gradient by Color value, or Sentiment (negative red, positive green)."
     },
     {
       "name": "tooltips",
@@ -39,7 +39,7 @@
       "kind": "Measure",
       "displayName": "Shape image",
       "displayNameKey": "Role_maskImage",
-      "description": "A Base64 image (data:image/...) from your model. Words fill its dark area. Set Layout > Shape to Image."
+      "description": "A Base64 image (data:image/...) from your model: words fill its dark area. Set Format > Layout > Shape to Image. Web links are not loaded."
     }
   ],
   "dataViewMappings": [
@@ -778,12 +778,12 @@
               },
               {
                 "value": "measure",
-                "displayName": "Gradient by Color by field",
+                "displayName": "Gradient by Color value",
                 "displayNameKey": "Enum_col_measure"
               },
               {
                 "value": "sentiment",
-                "displayName": "Sentiment (Color by field, centred on zero)",
+                "displayName": "Sentiment (Color value, centred on zero)",
                 "displayNameKey": "Enum_col_sentiment"
               }
             ]

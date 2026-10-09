@@ -1,7 +1,7 @@
 {
-  "Enum_col_measure": "Degradado por el campo Color por",
+  "Enum_col_measure": "Degradado por Valor de color",
   "Enum_col_palette": "Paleta",
-  "Enum_col_sentiment": "Sentimiento (campo Color por, centrado en cero)",
+  "Enum_col_sentiment": "Sentimiento (Valor de color, centrado en cero)",
   "Enum_col_single": "Un solo color",
   "Enum_col_size": "Degradado por tamaño",
   "Enum_col_theme": "Colores del tema",
@@ -149,7 +149,7 @@
   "Prop_words_minFont": "Tamaño de fuente mínimo",
   "Prop_words_padding": "Separación",
   "Prop_words_scale": "Escala de tamaño",
-  "Role_colorBy": "Color por",
+  "Role_colorBy": "Valor de color",
   "Role_maskImage": "Imagen de forma",
   "Role_size": "Tamaño",
   "Role_text": "Texto (texto libre)",

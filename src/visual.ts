@@ -694,7 +694,7 @@ export class Visual implements IVisual {
                 card("colors", "Colors", [
                     dd("colors", "mode", "Color by", s.colorMode, [["palette", "Enum_col_palette", "Palette"], ["theme", "Enum_col_theme", "Theme colors"],
                         ["single", "Enum_col_single", "Single color"], ["size", "Enum_col_size", "Gradient by size"],
-                        ["measure", "Enum_col_measure", "Gradient by Color by field"], ["sentiment", "Enum_col_sentiment", "Sentiment (Color by field, centred on zero)"]]),
+                        ["measure", "Enum_col_measure", "Gradient by Color value"], ["sentiment", "Enum_col_sentiment", "Sentiment (Color value, centred on zero)"]]),
                     dd("colors", "palette", "Palette", s.palette, PALETTES.map(pp => [pp.id, "Enum_pal_" + pp.id, pp.name + (pp.cb ? " (cb)" : "")] as [string, string, string])),
                     col("colors", "wordColor", "Word color", s.wordColor, true),
                     col("colors", "lowColor", "Low color", s.lowColor),

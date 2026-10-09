@@ -1,7 +1,7 @@
 {
-  "Enum_col_measure": "Gradient by Color by field",
+  "Enum_col_measure": "Gradient by Color value",
   "Enum_col_palette": "Palette",
-  "Enum_col_sentiment": "Sentiment (Color by field, centred on zero)",
+  "Enum_col_sentiment": "Sentiment (Color value, centred on zero)",
   "Enum_col_single": "Single color",
   "Enum_col_size": "Gradient by size",
   "Enum_col_theme": "Theme colors",
@@ -149,7 +149,7 @@
   "Prop_words_minFont": "Smallest font size",
   "Prop_words_padding": "Spacing",
   "Prop_words_scale": "Size scale",
-  "Role_colorBy": "Color by",
+  "Role_colorBy": "Color value",
   "Role_maskImage": "Shape image",
   "Role_size": "Size",
   "Role_text": "Text (free text)",
