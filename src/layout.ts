@@ -7,10 +7,12 @@
  * bits, así que se pueden probar miles de posiciones por palabra sin que se note.
  *
  * - Las posiciones se recorren en espiral desde el centro de la forma.
- * - La forma (círculo, corazón, imagen...) se aplica marcando como ocupado, antes de
- *   empezar, todo lo que queda fuera de ella.
+ * - La forma (básica, icono, texto o imagen) es una máscara: lo que queda fuera se marca
+ *   como ocupado antes de empezar. La misma máscara, pintada suave, es la silueta de fondo.
+ * - Relleno: tras las palabras de los datos, se repiten en tamaños pequeños hasta cubrir la
+ *   forma. Es lo que hace que un corazón se lea como corazón.
  * - Todo lo aleatorio sale de un generador con semilla: el mismo informe dibuja siempre
- *   la misma nube. Una nube que cambia en cada refresco no se puede comentar en una reunión.
+ *   la misma nube.
  * - Sin red, sin dependencias: solo canvas.
  */
 
@@ -18,38 +20,52 @@ export interface LayoutWord {
     text: string;
     /** Tamaño de fuente en px, ya escalado por el visual. */
     size: number;
-    /** Índice de la fila de origen, para volver a los datos (selección, tooltips). */
+    /** Índice de la palabra en los datos, para volver a ellos (selección, tooltips, color). */
     index: number;
 }
 
 export interface PlacedWord extends LayoutWord {
-    /** Centro del ancla del texto, en px del visual. */
     x: number;
     y: number;
-    /** Grados, sentido horario. */
     rotate: number;
-    /** Caja que ocupa ya rotada, para el foco del teclado y el hit-test. */
+    /** true = repetición decorativa del relleno (no entra en el orden de teclado). */
+    repeat: boolean;
     box: { x: number; y: number; w: number; h: number };
 }
 
-export type ShapeName = "rectangle" | "ellipse" | "circle" | "diamond" | "triangle" | "star" | "heart" | "cloud" | "image";
+export interface ShapeMask {
+    width: number;
+    height: number;
+    /** 1 = se puede escribir. */
+    data: Uint8Array;
+    /** La forma pintada en negro con bordes suavizados (para la silueta de fondo). */
+    canvas: HTMLCanvasElement | null;
+}
+
+export type ShapeSpec =
+    | { kind: "basic"; name: string }
+    | { kind: "icon"; paths: string[] }
+    | { kind: "text"; text: string; family: string }
+    | { kind: "image"; img: HTMLImageElement };
+
+export interface FillOptions {
+    minSize: number;
+    maxSize: number;
+    budgetMs: number;
+    maxCount: number;
+}
 
 export interface LayoutOptions {
     width: number;
     height: number;
     fontFamily: string;
     fontWeight: string;
-    /** Separación mínima entre palabras, px. */
     padding: number;
-    /** Ángulos permitidos, en grados. Se elige uno por palabra con el generador. */
     angles: number[];
-    /** 0 = espiral perfecta desde el centro; 1 = punto de partida y giro muy dispersos. */
     jitter: number;
     seed: number;
-    shape: ShapeName;
-    /** Solo con shape = "image": máscara ya calculada (1 = se puede escribir). */
-    imageMask?: { width: number; height: number; data: Uint8Array } | null;
-    /** Margen de tiempo para colocar, ms. Lo que no quepa en ese tiempo se descarta. */
+    mask: ShapeMask | null;
+    fill?: FillOptions | null;
     timeBudgetMs?: number;
 }
 
@@ -58,7 +74,7 @@ export interface LayoutResult {
     dropped: LayoutWord[];
 }
 
-/** Generador con semilla (mulberry32): rápido y suficiente para esto. */
+/** Generador con semilla (mulberry32). */
 export function seededRandom(seed: number): () => number {
     let a = (seed >>> 0) || 0x9e3779b9;
     return () => {
@@ -70,59 +86,115 @@ export function seededRandom(seed: number): () => number {
     };
 }
 
-interface Sprite {
-    /** Bits por fila: rows * words32. */
-    bits: Uint32Array;
-    words32: number;
-    w: number;
-    h: number;
-    /** Desplazamiento del ancla del texto dentro del sprite. */
-    ax: number;
-    ay: number;
-}
-
-/** ¿Está (u, v), en coordenadas normalizadas -1..1, dentro de la forma? */
-function insideShape(shape: ShapeName, u: number, v: number): boolean {
-    switch (shape) {
-        case "rectangle": return true;
-        case "ellipse":
-        case "circle": return u * u + v * v <= 1;
+/** Formas geométricas, en coordenadas normalizadas -1..1. */
+export function insideBasic(name: string, u: number, v: number): boolean {
+    switch (name) {
+        case "ellipse": case "circle": return u * u + v * v <= 1;
         case "diamond": return Math.abs(u) + Math.abs(v) <= 1;
         case "triangle": return v >= -0.95 && Math.abs(u) <= (v + 0.95) / 1.9;
-        case "star": {
-            const a = Math.atan2(v, u) + Math.PI / 2;
-            const r = Math.sqrt(u * u + v * v);
-            const k = (Math.cos(5 * a) + 1) / 2;          // 1 en las puntas, 0 en los valles
-            return r <= 0.45 + 0.55 * k;
-        }
-        case "heart": {
-            // Corazón clásico (x² + y² - 1)³ - x² y³ <= 0, con y hacia arriba.
-            const x = u * 1.25, y = -v * 1.25 + 0.25;
-            const q = x * x + y * y - 1;
-            return q * q * q - x * x * y * y * y <= 0;
-        }
-        case "cloud": {
-            const c = (cx: number, cy: number, r: number) => (u - cx) ** 2 + (v - cy) ** 2 <= r * r;
-            return c(-0.45, 0.15, 0.5) || c(0.05, -0.2, 0.62) || c(0.5, 0.1, 0.5) || (Math.abs(u) <= 0.85 && v >= 0.05 && v <= 0.6);
-        }
+        case "hexagon": { const x = Math.abs(u), y = Math.abs(v); return y <= 0.866 && 0.866 * x + 0.5 * y <= 0.866; }
         default: return true;
     }
 }
 
+interface Sprite { bits: Uint32Array; words32: number; w: number; h: number; ax: number; ay: number }
+
 export class CloudLayout {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
+    private doc: Document;
 
     constructor(doc: Document) {
+        this.doc = doc;
         this.canvas = doc.createElement("canvas");
         this.ctx = this.canvas.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
     }
 
-    /** Ancho del texto con la fuente dada, para el visual (truncado, accesibilidad). */
-    public measure(text: string, size: number, family: string, weight: string): number {
-        this.ctx.font = `${weight} ${size}px ${family}`;
-        return this.ctx.measureText(text).width;
+    // ── Máscaras ──────────────────────────────────────────────────────────────
+
+    /**
+     * Máscara de la forma al tamaño del visual. Básicas: geometría. Icono y texto: se
+     * dibujan en un canvas a la mayor escala que cabe, centrados. Imagen: lo oscuro y opaco.
+     */
+    public buildMask(spec: ShapeSpec, W: number, H: number, circle = false): ShapeMask | null {
+        W = Math.max(1, Math.floor(W)); H = Math.max(1, Math.floor(H));
+        const c = this.doc.createElement("canvas"); c.width = W; c.height = H;
+        const ctx = c.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
+        ctx.fillStyle = "#000";
+        const margin = 0.03;
+        if (spec.kind === "basic") {
+            if (spec.name === "rectangle") return null;
+            const rx = circle ? Math.min(W, H) / 2 : W / 2, ry = circle ? Math.min(W, H) / 2 : H / 2;
+            const img = ctx.createImageData(W, H);
+            for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                if (insideBasic(spec.name, (x + 0.5 - W / 2) / (rx * (1 - margin)), (y + 0.5 - H / 2) / (ry * (1 - margin)))) img.data[(y * W + x) * 4 + 3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+        } else if (spec.kind === "icon") {
+            const s = Math.min(W, H) * (1 - 2 * margin) / 24;
+            ctx.save();
+            ctx.translate((W - 24 * s) / 2, (H - 24 * s) / 2);
+            ctx.scale(s, s);
+            for (const d of spec.paths) ctx.fill(new Path2D(d));
+            ctx.restore();
+        } else if (spec.kind === "text") {
+            const lines = spec.text.split(/\||\n/).map(l => l.trim()).filter(Boolean);
+            if (!lines.length) return null;
+            // La mayor fuente con la que el bloque de líneas cabe en el visual.
+            let size = 400;
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            const fits = (sz: number) => {
+                ctx.font = `900 ${sz}px ${spec.family}`;
+                const w = Math.max(...lines.map(l => ctx.measureText(l).width));
+                return w <= W * (1 - 2 * margin) && sz * 1.05 * lines.length <= H * (1 - 2 * margin);
+            };
+            while (size > 8 && !fits(size)) size *= 0.92;
+            ctx.font = `900 ${size}px ${spec.family}`;
+            const lh = size * 1.05, top = H / 2 - (lines.length - 1) * lh / 2;
+            lines.forEach((l, i) => ctx.fillText(l, W / 2, top + i * lh));
+        } else if (spec.kind === "image") {
+            const iw = spec.img.naturalWidth, ih = spec.img.naturalHeight;
+            if (!iw || !ih) return null;
+            const s = Math.min(W / iw, H / ih) * (1 - 2 * margin);
+            const off = this.doc.createElement("canvas"); off.width = W; off.height = H;
+            const octx = off.getContext("2d", { willReadFrequently: true } as any) as CanvasRenderingContext2D;
+            octx.drawImage(spec.img, (W - iw * s) / 2, (H - ih * s) / 2, iw * s, ih * s);
+            const px = octx.getImageData(0, 0, W, H).data;
+            const img = ctx.createImageData(W, H);
+            for (let i = 0; i < W * H; i++) {
+                const a = px[i * 4 + 3], lum = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+                if (a > 128 && lum < 160) img.data[i * 4 + 3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+        }
+        const px = ctx.getImageData(0, 0, W, H).data;
+        const data = new Uint8Array(W * H);
+        let n = 0;
+        for (let i = 0; i < W * H; i++) if (px[i * 4 + 3] > 127) { data[i] = 1; n++; }
+        if (n < W * H * 0.02) return null;          // forma vacía o diminuta: rectángulo
+        return { width: W, height: H, data, canvas: c };
     }
+
+    /** La silueta pintada de un color, como imagen data: para el fondo del SVG. */
+    public static silhouette(doc: Document, mask: ShapeMask, color: string): string | null {
+        if (!mask.canvas) return null;
+        const c = doc.createElement("canvas"); c.width = mask.width; c.height = mask.height;
+        const ctx = c.getContext("2d") as CanvasRenderingContext2D;
+        ctx.drawImage(mask.canvas, 0, 0);
+        ctx.globalCompositeOperation = "source-in";
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, c.width, c.height);
+        return c.toDataURL("image/png");
+    }
+
+    /** Carga una imagen data: (nunca una URL externa: el visual no sale a la red). */
+    public static loadImage(doc: Document, src: string): Promise<HTMLImageElement | null> {
+        if (!/^data:image\//i.test(src)) return Promise.resolve(null);
+        const img = doc.createElement("img");
+        return new Promise(ok => { img.onload = () => ok(img); img.onerror = () => ok(null); img.src = src; });
+    }
+
+    // ── Sprites ───────────────────────────────────────────────────────────────
 
     private sprite(word: LayoutWord, rotate: number, o: LayoutOptions): Sprite | null {
         const ctx = this.ctx;
@@ -150,9 +222,7 @@ export class CloudLayout {
         ctx.save();
         ctx.translate(w / 2, h / 2);
         ctx.rotate(rad);
-        // El ancla (centro horizontal, línea base) se desplaza para que el centro de la caja
-        // del texto quede en el centro del sprite.
-        const by = (asc - desc) / 2;
+        const by = (asc - desc) / 2;       // la caja del texto queda centrada en el sprite
         ctx.fillText(word.text, 0, by);
         if (pad > 0) ctx.strokeText(word.text, 0, by);
         ctx.restore();
@@ -170,11 +240,10 @@ export class CloudLayout {
             }
         }
         if (!any) return null;
-        // Ancla en el sistema del sprite: centro + desplazamiento de la línea base rotado.
-        const ax = w / 2 - by * Math.sin(rad);
-        const ay = h / 2 + by * Math.cos(rad);
-        return { bits, words32, w, h, ax, ay };
+        return { bits, words32, w, h, ax: w / 2 - by * Math.sin(rad), ay: h / 2 + by * Math.cos(rad) };
     }
+
+    // ── Colocación ────────────────────────────────────────────────────────────
 
     public run(words: LayoutWord[], o: LayoutOptions): LayoutResult {
         const W = Math.max(1, Math.floor(o.width)), H = Math.max(1, Math.floor(o.height));
@@ -184,27 +253,19 @@ export class CloudLayout {
         const t0 = Date.now();
         const budget = o.timeBudgetMs ?? 1500;
 
-        // Máscara: todo lo que queda fuera de la forma se marca como ocupado.
-        const mask = o.shape === "image" ? o.imageMask : null;
+        // Máscara: lo que queda fuera de la forma, ocupado desde el principio.
+        const mask = o.mask && o.mask.width === W && o.mask.height === H ? o.mask : null;
         let cx = W / 2, cy = H / 2;
-        if (o.shape !== "rectangle") {
-            const rx = o.shape === "circle" ? Math.min(W, H) / 2 : W / 2;
-            const ry = o.shape === "circle" ? Math.min(W, H) / 2 : H / 2;
+        const free: number[] = [];                  // píxeles dentro de la forma (muestreados), para el relleno
+        if (mask) {
             let sx = 0, sy = 0, n = 0;
-            for (let y = 0; y < H; y++) {
-                for (let x = 0; x < W; x++) {
-                    let inside: boolean;
-                    if (mask) {
-                        const mx = Math.floor(x * mask.width / W), my = Math.floor(y * mask.height / H);
-                        inside = mask.data[my * mask.width + mx] === 1;
-                    } else {
-                        inside = insideShape(o.shape, (x - W / 2) / rx, (y - H / 2) / ry);
-                    }
-                    if (!inside) board[y * bw + (x >> 5)] |= 0x80000000 >>> (x & 31);
-                    else { sx += x; sy += y; n++; }
-                }
+            for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                if (mask.data[y * W + x]) { sx += x; sy += y; n++; if (((x * 7 + y * 13) & 15) === 0) free.push(y * W + x); }
+                else board[y * bw + (x >> 5)] |= 0x80000000 >>> (x & 31);
             }
-            if (n > 0) { cx = sx / n; cy = sy / n; }     // centro de masa de la forma
+            if (n > 0) { cx = sx / n; cy = sy / n; }
+        } else {
+            for (let y = 0; y < H; y += 4) for (let x = 0; x < W; x += 4) free.push(y * W + x);
         }
 
         const collides = (s: Sprite, px: number, py: number): boolean => {
@@ -235,63 +296,71 @@ export class CloudLayout {
                 if (carry) board[row + s.words32] |= carry;
             }
         };
+        const ratio = Math.sqrt(W / Math.max(1, H));
+        /** Espiral de Arquímedes desde (sx, sy), vueltas cada ~4 px, hasta maxR. */
+        const spiral = (s: Sprite, sx: number, sy: number, maxR: number, dir: number, phase: number): [number, number] | null => {
+            for (let i = 0; ; i++) {
+                const th = i * 0.1, r = 0.65 * th;
+                if (r > maxR) return null;
+                const a = dir * th + phase;
+                const x = Math.round(sx + r * Math.cos(a) * ratio - s.ax);
+                const y = Math.round(sy + r * Math.sin(a) / ratio - s.ay);
+                if (x < 0 || y < 0 || x + s.w >= W || y + s.h >= H) continue;
+                if (!collides(s, x, y)) return [x, y];
+            }
+        };
 
         const placed: PlacedWord[] = [], dropped: LayoutWord[] = [];
         const maxR = Math.sqrt(W * W + H * H);
-        const ratio = W / Math.max(1, H);
         for (const word of words) {
             if (Date.now() - t0 > budget) { dropped.push(word); continue; }
             const rotate = o.angles.length ? o.angles[Math.floor(rnd() * o.angles.length) % o.angles.length] : 0;
             const s = this.sprite(word, rotate, o);
             if (!s) { dropped.push(word); continue; }
-            // Punto de partida: el centro, desplazado más o menos según el jitter.
             const jx = (rnd() - 0.5) * W * 0.5 * o.jitter, jy = (rnd() - 0.5) * H * 0.5 * o.jitter;
-            const startX = cx + jx, startY = cy + jy;
-            const dir = rnd() < 0.5 ? 1 : -1;
-            const phase = rnd() * Math.PI * 2 * o.jitter;
-            // Espiral de Arquímedes: vueltas separadas ~4 px (2π · 0.65), así no se salta huecos.
-            let ok = false, i = 0;
-            while (true) {
-                const th = i * 0.1;
-                const r = 0.65 * th;
-                if (r > maxR) break;
-                const a = dir * th + phase;
-                const x = Math.round(startX + r * Math.cos(a) * Math.sqrt(ratio) - s.ax);
-                const y = Math.round(startY + r * Math.sin(a) / Math.sqrt(ratio) - s.ay);
-                i += 1;
-                if (x < 0 || y < 0 || x + s.w >= W || y + s.h >= H) continue;
-                if (!collides(s, x, y)) {
-                    stamp(s, x, y);
-                    placed.push({ ...word, x: x + s.ax, y: y + s.ay, rotate, box: { x, y, w: s.w, h: s.h } });
-                    ok = true;
-                    break;
+            const pos = spiral(s, cx + jx, cy + jy, maxR, rnd() < 0.5 ? 1 : -1, rnd() * Math.PI * 2 * o.jitter);
+            if (!pos) { dropped.push(word); continue; }
+            stamp(s, pos[0], pos[1]);
+            placed.push({ ...word, x: pos[0] + s.ax, y: pos[1] + s.ay, rotate, repeat: false, box: { x: pos[0], y: pos[1], w: s.w, h: s.h } });
+        }
+
+        // Relleno: repetir las palabras colocadas, de mayor a menor, en huecos libres.
+        const f = o.fill;
+        if (f && placed.length && free.length) {
+            const tf = Date.now();
+            const pool = placed.slice();
+            const isFree = (p: number) => {
+                const x = p % W, y = (p / W) | 0;
+                return !(board[y * bw + (x >> 5)] & (0x80000000 >>> (x & 31)));
+            };
+            // Se vacía la lista de candidatos a medida que se ocupan: así cada intento empieza
+            // en un hueco de verdad, no en un punto que ya tapa una palabra grande.
+            let cand = free.filter(isFree);
+            let fails = 0, count = 0, k = 0;
+            let size = f.maxSize;
+            while (count < f.maxCount && Date.now() - tf < f.budgetMs && size >= f.minSize && cand.length) {
+                const src = pool[k++ % pool.length];
+                const rotate = o.angles.length ? o.angles[Math.floor(rnd() * o.angles.length) % o.angles.length] : 0;
+                const w2: LayoutWord = { text: src.text, index: src.index, size };
+                const s = this.sprite(w2, rotate, o);
+                const ci = Math.floor(rnd() * cand.length), p = cand[ci];
+                const pos = s ? spiral(s, p % W, Math.floor(p / W), Math.max(10, size * 2.5), rnd() < 0.5 ? 1 : -1, rnd() * 6.28) : null;
+                if (s && pos) {
+                    stamp(s, pos[0], pos[1]);
+                    placed.push({ ...w2, x: pos[0] + s.ax, y: pos[1] + s.ay, rotate, repeat: true, box: { x: pos[0], y: pos[1], w: s.w, h: s.h } });
+                    count++; fails = 0;
+                    if (count % 25 === 0) cand = cand.filter(isFree);
+                } else {
+                    // Ese punto no admite esta palabra: fuera de la lista si ya está tapado.
+                    if (!isFree(p)) { cand[ci] = cand[cand.length - 1]; cand.pop(); }
+                    if (++fails > 120) {
+                        // Este tamaño ya no cabe: bajar y seguir rellenando.
+                        size *= 0.85; fails = 0;
+                        cand = cand.filter(isFree);
+                    }
                 }
             }
-            if (!ok) dropped.push(word);
         }
         return { placed, dropped };
-    }
-
-    /** Máscara de una imagen (Base64 o URL data:): escribible = píxel oscuro y opaco. */
-    public static async maskFromImage(doc: Document, src: string, res = 200): Promise<{ width: number; height: number; data: Uint8Array } | null> {
-        if (!/^data:image\//i.test(src)) return null;              // nunca una URL externa
-        const img = doc.createElement("img");
-        const loaded = await new Promise<boolean>(ok => {
-            img.onload = () => ok(true); img.onerror = () => ok(false); img.src = src;
-        });
-        if (!loaded || !img.naturalWidth) return null;
-        const k = res / Math.max(img.naturalWidth, img.naturalHeight);
-        const w = Math.max(8, Math.round(img.naturalWidth * k)), h = Math.max(8, Math.round(img.naturalHeight * k));
-        const c = doc.createElement("canvas"); c.width = w; c.height = h;
-        const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-        ctx.drawImage(img, 0, 0, w, h);
-        const px = ctx.getImageData(0, 0, w, h).data;
-        const data = new Uint8Array(w * h);
-        let n = 0;
-        for (let i = 0; i < w * h; i++) {
-            const a = px[i * 4 + 3], lum = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
-            if (a > 128 && lum < 160) { data[i] = 1; n++; }
-        }
-        return n > w * h * 0.02 ? { width: w, height: h, data } : null;
     }
 }

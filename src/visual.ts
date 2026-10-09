@@ -2,8 +2,10 @@
 
 import powerbi from "powerbi-visuals-api";
 import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
-import { CloudLayout, LayoutWord, PlacedWord, ShapeName } from "./layout";
+import { CloudLayout, LayoutWord, PlacedWord, ShapeMask, ShapeSpec } from "./layout";
 import { tokenize } from "./text";
+import { ICONS } from "./icons";
+import { PALETTES, paletteById, ramp, hashIndex } from "./palettes";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -24,8 +26,11 @@ interface Settings {
     langEn: boolean; langEs: boolean; langPt: boolean; langFr: boolean; langDe: boolean; langIt: boolean;
     minLength: number; exclude: string; bigrams: boolean;
     orientation: string; verticalShare: number; fromAngle: number; toAngle: number; steps: number;
-    shape: string; jitter: number; seed: number; animate: boolean;
-    colorMode: string; wordColor: string; lowColor: string; highColor: string; background: string;
+    shape: string; icon: string; shapeText: string;
+    silhouette: boolean; silhouetteColor: string; silhouetteOpacity: number;
+    fillShape: boolean; fillMinFont: number;
+    jitter: number; seed: number; animate: boolean;
+    colorMode: string; palette: string; wordColor: string; lowColor: string; highColor: string; background: string;
 }
 
 const DEFAULTS: Settings = {
@@ -35,8 +40,11 @@ const DEFAULTS: Settings = {
     langEn: true, langEs: false, langPt: false, langFr: false, langDe: false, langIt: false,
     minLength: 3, exclude: "", bigrams: false,
     orientation: "horizontal", verticalShare: 30, fromAngle: -45, toAngle: 45, steps: 3,
-    shape: "rectangle", jitter: 15, seed: 7, animate: true,
-    colorMode: "theme", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "",
+    shape: "rectangle", icon: "heart", shapeText: "TCViz",
+    silhouette: true, silhouetteColor: "", silhouetteOpacity: 12,
+    fillShape: true, fillMinFont: 6,
+    jitter: 15, seed: 7, animate: true,
+    colorMode: "palette", palette: "tcviz", wordColor: "#2B6CB0", lowColor: "#9DB8D9", highColor: "#1F4E80", background: "",
 };
 
 /**
@@ -46,10 +54,10 @@ const DEFAULTS: Settings = {
 const TEMPLATES: Record<string, Partial<Settings>> = {
     none: {},
     clean: {},
-    bold: { bold: true, orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 80, scale: "linear", jitter: 25 },
-    editorial: { fontFamily: "Georgia, 'Times New Roman', serif", colorMode: "size", lowColor: "#B5B5B5", highColor: "#1F1F1F", padding: 3, scale: "sqrt" },
+    bold: { bold: true, orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 80, scale: "linear", jitter: 25, palette: "vivid" },
+    editorial: { fontFamily: "Georgia, 'Times New Roman', serif", colorMode: "size", palette: "ink", padding: 3, scale: "sqrt" },
     mono: { colorMode: "single", wordColor: "#3D3929", bold: true, padding: 2 },
-    poster: { bold: true, shape: "ellipse", orientation: "mixed", verticalShare: 35, padding: 1, maxFont: 96, scale: "linear", fontFamily: "'Segoe UI Black', 'Segoe UI', sans-serif" },
+    poster: { bold: true, shape: "icon", icon: "heart", orientation: "mixed", verticalShare: 25, padding: 1, maxFont: 96, scale: "linear", palette: "sunset", fontFamily: "'Segoe UI Black', 'Segoe UI', sans-serif" },
 };
 
 type Objects = powerbi.DataViewObjects | undefined;
@@ -76,20 +84,17 @@ function readSettings(objects: Objects): Settings {
         minLength: pick("freeText", "minLength", "minLength"), exclude: pick("freeText", "exclude", "exclude"), bigrams: pick("freeText", "bigrams", "bigrams"),
         orientation: pick("orientation", "mode", "orientation"), verticalShare: pick("orientation", "verticalShare", "verticalShare"),
         fromAngle: pick("orientation", "fromAngle", "fromAngle"), toAngle: pick("orientation", "toAngle", "toAngle"), steps: pick("orientation", "steps", "steps"),
-        shape: pick("layout", "shape", "shape"), jitter: pick("layout", "jitter", "jitter"), seed: pick("layout", "seed", "seed"), animate: pick("layout", "animate", "animate"),
-        colorMode: pick("colors", "mode", "colorMode"), wordColor: pick("colors", "wordColor", "wordColor"),
+        shape: pick("layout", "shape", "shape"), icon: pick("layout", "icon", "icon"), shapeText: pick("layout", "shapeText", "shapeText"),
+        silhouette: pick("layout", "silhouette", "silhouette"), silhouetteColor: pick("layout", "silhouetteColor", "silhouetteColor"),
+        silhouetteOpacity: pick("layout", "silhouetteOpacity", "silhouetteOpacity"),
+        fillShape: pick("layout", "fillShape", "fillShape"), fillMinFont: pick("layout", "fillMinFont", "fillMinFont"),
+        jitter: pick("layout", "jitter", "jitter"), seed: pick("layout", "seed", "seed"), animate: pick("layout", "animate", "animate"),
+        colorMode: pick("colors", "mode", "colorMode"), palette: pick("colors", "palette", "palette"), wordColor: pick("colors", "wordColor", "wordColor"),
         lowColor: pick("colors", "lowColor", "lowColor"), highColor: pick("colors", "highColor", "highColor"), background: pick("colors", "background", "background"),
     };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(v) ? v : lo));
-
-function mix(a: string, b: string, t: number): string {
-    const p = (c: string) => { const h = c.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map(x => x + x).join("") : h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-    const [r1, g1, b1] = p(a), [r2, g2, b2] = p(b);
-    const f = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, "0");
-    return "#" + f(r1, r2) + f(g1, g2) + f(b1, b2);
-}
 
 // ─── Modelo de datos ──────────────────────────────────────────────────────────
 
@@ -122,7 +127,8 @@ export class Visual implements IVisual {
     private focusIndex = 0;
     private keyboardNav = false;
     private updateToken = 0;
-    private masks = new Map<string, Promise<{ width: number; height: number; data: Uint8Array } | null>>();
+    private images = new Map<string, Promise<HTMLImageElement | null>>();
+    private maskCache: { key: string; mask: ShapeMask | null } | null = null;
     private hasHighlights = false;
     private lastOptions: VisualUpdateOptions | null = null;
 
@@ -201,13 +207,12 @@ export class Visual implements IVisual {
                 return;
             }
             // La forma por imagen se carga una vez y se cachea por contenido.
-            const s = this.settings;
-            const maskSrc = s.shape === "image" ? this.maskSource(dv) : null;
-            if (maskSrc) {
-                let p = this.masks.get(maskSrc);
-                if (!p) { p = CloudLayout.maskFromImage(document, maskSrc); this.masks.set(maskSrc, p); }
-                p.then(mask => {
-                    if (token === this.updateToken) this.render(options, mask);
+            const src = this.settings.shape === "image" ? this.maskSource(dv) : null;
+            if (src) {
+                let p = this.images.get(src);
+                if (!p) { p = CloudLayout.loadImage(document, src); this.images.set(src, p); }
+                p.then(img => {
+                    if (token === this.updateToken) this.render(options, img);
                     this.events.renderingFinished(options);
                 }).catch(err => this.events.renderingFailed(options, String(err)));
                 return;
@@ -305,7 +310,37 @@ export class Visual implements IVisual {
 
     // ── Render ────────────────────────────────────────────────────────────────
 
-    private render(options: VisualUpdateOptions, mask: { width: number; height: number; data: Uint8Array } | null): void {
+    /** Máscara de la forma elegida, cacheada por forma y tamaño. null = rectángulo. */
+    private shapeMask(W: number, H: number, img: HTMLImageElement | null): ShapeMask | null {
+        const s = this.settings;
+        const family = s.fontFamily || DEFAULTS.fontFamily;
+        let spec: ShapeSpec | null = null, key = "";
+        switch (s.shape) {
+            case "icon": if (ICONS[s.icon]) { spec = { kind: "icon", paths: ICONS[s.icon] }; key = "icon:" + s.icon; } break;
+            case "text": if ((s.shapeText || "").trim()) { spec = { kind: "text", text: s.shapeText, family }; key = "text:" + s.shapeText + family; } break;
+            case "image": if (img) { spec = { kind: "image", img }; key = "image:" + img.src.length + ":" + img.src.slice(-64); } break;
+            case "rectangle": break;
+            default: spec = { kind: "basic", name: s.shape }; key = "basic:" + s.shape;
+        }
+        if (!spec) return null;
+        key += "@" + W + "x" + H;
+        if (this.maskCache?.key === key) return this.maskCache.mask;
+        const mask = this.layout.buildMask(spec, W, H, s.shape === "circle");
+        this.maskCache = { key, mask };
+        return mask;
+    }
+
+    private addSilhouette(mask: ShapeMask, color: string, opacity: number, W: number, H: number): void {
+        const url = CloudLayout.silhouette(document, mask, color);
+        if (!url) return;
+        const im = document.createElementNS(SVG, "image");
+        im.setAttribute("href", url); im.setAttribute("width", String(W)); im.setAttribute("height", String(H));
+        im.setAttribute("opacity", String(opacity));
+        im.setAttribute("pointer-events", "none"); im.setAttribute("aria-hidden", "true");
+        this.svg.appendChild(im);
+    }
+
+    private render(options: VisualUpdateOptions, img: HTMLImageElement | null): void {
         const s = this.settings;
         const W = Math.floor(options.viewport.width), H = Math.floor(options.viewport.height);
         const svg = this.svg;
@@ -323,17 +358,40 @@ export class Visual implements IVisual {
         bgRect.setAttribute("fill", bg || "transparent"); bgRect.setAttribute("data-bg", "1");
         svg.appendChild(bgRect);
 
+        const palette = paletteById(s.palette);
+        const stops = palette.id === "custom" || !palette.colors.length ? [s.lowColor, s.highColor] : palette.colors;
+
+        // Forma y silueta de fondo. En alto contraste, la silueta en el color del tema.
+        const mask = W > 20 && H > 20 ? this.shapeMask(W, H, img) : null;
+        let coverage = 1;
+        if (mask) {
+            let n = 0;
+            for (let i = 0; i < mask.data.length; i++) n += mask.data[i];
+            coverage = n / mask.data.length;
+            if (hc) {
+                this.addSilhouette(mask, pal.foreground?.value ?? "#000", 0.15, W, H);
+            } else if (s.silhouette) {
+                const auto = s.colorMode === "single" ? s.wordColor
+                    : s.colorMode === "theme" ? pal.getColor("__shape__").value
+                    : (stops[Math.floor(stops.length / 2)] || stops[0]);
+                this.addSilhouette(mask, s.silhouetteColor || auto, clamp(s.silhouetteOpacity, 0, 100) / 100, W, H);
+            }
+        }
+
         // Escala de tamaño: el mayor peso -> maxFont, el menor -> minFont.
         const ws = this.words.map(w => w.weight);
         const wMax = Math.max(...ws), wMin = Math.min(...ws);
         const f = s.scale === "log" ? Math.log1p : s.scale === "sqrt" ? Math.sqrt : (x: number) => x;
         const lo = f(Math.max(0, wMin)), hi = f(Math.max(0, wMax));
-        // El tamaño máximo se acota al visual: en un visual pequeño, palabras pequeñas.
-        const maxFont0 = Math.min(clamp(s.maxFont, 6, 300), H * 0.35, W * 0.2);
+        // El tamaño máximo se acota al visual y, con forma, a lo que la forma deja libre.
+        const shapeK = mask ? clamp(Math.sqrt(coverage) * 1.15, 0.4, 1) : 1;
+        const maxFont0 = Math.min(clamp(s.maxFont, 6, 300), H * 0.35, W * 0.2) * shapeK;
         const minFont0 = Math.min(clamp(s.minFont, 4, 200), maxFont0);
         const angles = this.angles();
         const family = s.fontFamily || DEFAULTS.fontFamily;
         const weight = s.bold ? "700" : "400";
+        const fillOn = !!mask && s.fillShape;
+        const fillMin = clamp(s.fillMinFont, 4, 30);
 
         let factor = 1;
         let result = null as ReturnType<CloudLayout["run"]>;
@@ -345,7 +403,9 @@ export class Visual implements IVisual {
             result = this.layout.run(lw, {
                 width: W, height: H, fontFamily: family, fontWeight: weight, padding: clamp(s.padding, 0, 20),
                 angles, jitter: clamp(s.jitter, 0, 100) / 100, seed: Math.round(s.seed) || 0,
-                shape: (s.shape as ShapeName) || "rectangle", imageMask: mask, timeBudgetMs: 900,
+                mask, timeBudgetMs: 900,
+                // El relleno va del tamaño de la palabra más pequeña hacia abajo, sin bajar del mínimo legible.
+                fill: fillOn ? { minSize: fillMin, maxSize: Math.max(fillMin + 3, minFont0 * factor * 0.95), budgetMs: 700, maxCount: 1200 } : null,
             });
             // Ajustar: si se quedan fuera palabras de las primeras (las más importantes),
             // encoger todo y repetir. Unas pocas pequeñas fuera no justifican encoger.
@@ -358,27 +418,32 @@ export class Visual implements IVisual {
         // Colores
         const cvs = this.words.map(w => w.colorValue).filter(v => v !== null) as number[];
         const cMin = cvs.length ? Math.min(...cvs) : 0, cMax = cvs.length ? Math.max(...cvs) : 1;
+        const absMax = cvs.length ? Math.max(...cvs.map(Math.abs)) : 1;
+        const catColors = palette.colors.length ? palette.colors : [s.lowColor, s.highColor];
         const colorOf = (w: WordDatum): string => {
             if (hc) return pal.foreground?.value ?? "#000";
-            if (w.ruleColor && s.colorMode !== "theme") return w.ruleColor;
             switch (s.colorMode) {
                 case "single": return w.ruleColor || s.wordColor;
-                case "size": return mix(s.lowColor, s.highColor, hi > lo ? (f(Math.max(0, w.weight)) - lo) / (hi - lo) : 1);
-                case "measure": return w.colorValue === null ? s.lowColor : mix(s.lowColor, s.highColor, cMax > cMin ? (w.colorValue - cMin) / (cMax - cMin) : 1);
+                case "size": return ramp(stops, hi > lo ? (f(Math.max(0, w.weight)) - lo) / (hi - lo) : 1);
+                case "measure": return w.colorValue === null ? stops[0] : ramp(stops, cMax > cMin ? (w.colorValue - cMin) / (cMax - cMin) : 1);
+                // Sentimiento: divergente centrado en cero; el signo decide el lado.
+                case "sentiment": return w.colorValue === null ? ramp(stops, 0.5) : ramp(stops, 0.5 + (absMax ? w.colorValue / (2 * absMax) : 0));
+                case "palette": return w.ruleColor || catColors[hashIndex(w.key, catColors.length)];
                 default: return w.ruleColor || pal.getColor(w.key).value;
             }
         };
 
         // Animar solo cuando cambian los datos o el aspecto, no al seleccionar ni al redimensionar.
-        const key = JSON.stringify([this.words.map(w => w.key + ":" + w.weight), s, W > 0, H > 0]);
+        const key = JSON.stringify([this.words.map(w => w.key + ":" + w.weight), s]);
         const animate = s.animate && key !== this.lastKey;
         this.lastKey = key;
 
         const g = document.createElementNS(SVG, "g");
         svg.appendChild(g);
-        // Orden de lectura y de tabulación: de la palabra más importante a la menos.
-        const order = this.placed.slice().sort((a, b) => a.index - b.index);
-        order.forEach((p, rank) => {
+        // Primero el relleno (debajo); luego las palabras de los datos, de la más importante a la menos.
+        const repeats = this.placed.filter(p => p.repeat);
+        const main = this.placed.filter(p => !p.repeat).sort((a, b) => a.index - b.index);
+        const mk = (p: PlacedWord, rank: number) => {
             const w = this.words[p.index];
             const el = document.createElementNS(SVG, "text");
             el.textContent = p.text;
@@ -389,25 +454,31 @@ export class Visual implements IVisual {
             el.setAttribute("font-family", family);
             el.setAttribute("font-weight", weight);
             el.setAttribute("fill", colorOf(w));
-            el.setAttribute("role", "option");
-            el.setAttribute("tabindex", rank === this.focusIndex ? "0" : "-1");
-            el.setAttribute("aria-label", `${w.text}, ${(this as any).fmtSize(w.weight)}`);
-            const rot = p.rotate ? ` rotate(${p.rotate} ${p.x} ${p.y})` : "";
+            if (p.rotate) el.setAttribute("transform", "rotate(" + p.rotate + " " + p.x + " " + p.y + ")");
+            if (p.repeat) {
+                // Decorativo: se puede pulsar (selecciona su palabra), pero no entra en el
+                // teclado ni en el lector de pantalla.
+                el.setAttribute("data-repeat", "1");
+                el.setAttribute("aria-hidden", "true");
+            } else {
+                el.setAttribute("role", "option");
+                el.setAttribute("tabindex", rank === this.focusIndex ? "0" : "-1");
+                el.setAttribute("aria-label", w.text + ", " + (this as any).fmtSize(w.weight));
+            }
             if (animate) {
                 el.setAttribute("class", "tcwc-in");
                 el.style.opacity = "0";
-                el.style.transformOrigin = `${p.x}px ${p.y}px`;
-                el.style.transform = "scale(0.6)";
-                el.style.transitionDelay = `${Math.min(rank * 12, 500)}ms`;
+                el.style.transitionDelay = Math.min((p.repeat ? 300 : 0) + rank * 10, 700) + "ms";
             }
-            if (rot) el.setAttribute("transform", rot.trim());
-            this.wire(el, w, rank, order.length);
+            this.wire(el, w, rank, main.length, p.repeat);
             g.appendChild(el);
-        });
+        };
+        repeats.forEach((p, i) => mk(p, i));
+        main.forEach((p, rank) => mk(p, rank));
         if (animate) {
             // Doble frame: el navegador pinta el estado inicial antes de la transición.
             requestAnimationFrame(() => requestAnimationFrame(() => {
-                g.querySelectorAll<SVGTextElement>("text.tcwc-in").forEach(t => { t.style.opacity = ""; t.style.transform = ""; });
+                g.querySelectorAll<SVGTextElement>("text.tcwc-in").forEach(el => { el.style.opacity = ""; });
             }));
         }
         this.paintSelection();
@@ -433,7 +504,7 @@ export class Visual implements IVisual {
 
     // ── Interacción ───────────────────────────────────────────────────────────
 
-    private wire(el: SVGTextElement, w: WordDatum, rank: number, total: number): void {
+    private wire(el: SVGTextElement, w: WordDatum, rank: number, total: number, repeat = false): void {
         el.addEventListener("click", (e) => {
             e.stopPropagation();
             this.keyboardNav = false;
@@ -446,10 +517,11 @@ export class Visual implements IVisual {
         });
         el.addEventListener("mousemove", (e) => this.showTooltip(w, e.clientX, e.clientY));
         el.addEventListener("mouseleave", () => this.host.tooltipService.hide({ immediately: false, isTouchEvent: false }));
+        if (repeat) return;
         el.addEventListener("keydown", (e: KeyboardEvent) => {
             this.keyboardNav = true;
             const go = (i: number) => {
-                const all = Array.from(this.svg.querySelectorAll<SVGTextElement>("text[data-word]"));
+                const all = Array.from(this.svg.querySelectorAll<SVGTextElement>("text[data-word]:not([data-repeat])"));
                 const j = (i + all.length) % all.length;
                 all.forEach((t, k) => t.setAttribute("tabindex", k === j ? "0" : "-1"));
                 this.focusIndex = j;
@@ -602,15 +674,26 @@ export class Visual implements IVisual {
                     num("orientation", "steps", "Number of angles", s.steps),
                 ]),
                 card("layout", "Layout", [
-                    dd("layout", "shape", "Shape", s.shape, [["rectangle", "Enum_sh_rectangle", "Rectangle"], ["ellipse", "Enum_sh_ellipse", "Ellipse"], ["circle", "Enum_sh_circle", "Circle"],
-                        ["diamond", "Enum_sh_diamond", "Diamond"], ["triangle", "Enum_sh_triangle", "Triangle"], ["star", "Enum_sh_star", "Star"], ["heart", "Enum_sh_heart", "Heart"],
-                        ["cloud", "Enum_sh_cloud", "Cloud"], ["image", "Enum_sh_image", "Image (Shape image field)"]]),
+                    dd("layout", "shape", "Shape", s.shape, [["rectangle", "Enum_sh_rectangle", "Rectangle"], ["ellipse", "Enum_sh_ellipse", "Ellipse"],
+                        ["circle", "Enum_sh_circle", "Circle"], ["diamond", "Enum_sh_diamond", "Diamond"], ["triangle", "Enum_sh_triangle", "Triangle"],
+                        ["hexagon", "Enum_sh_hexagon", "Hexagon"], ["icon", "Enum_sh_icon", "Icon"], ["text", "Enum_sh_text", "Text"],
+                        ["image", "Enum_sh_image", "Image (Shape image field)"]]),
+                    dd("layout", "icon", "Icon", s.icon, Object.keys(ICONS).map(k => [k, "Enum_icon_" + k, k.replace(/-/g, " ").replace(/^./, c => c.toUpperCase())] as [string, string, string])),
+                    txt("layout", "shapeText", "Shape text", s.shapeText),
+                    tog("layout", "silhouette", "Show shape", s.silhouette),
+                    col("layout", "silhouetteColor", "Shape color", s.silhouetteColor),
+                    num("layout", "silhouetteOpacity", "Shape opacity %", s.silhouetteOpacity),
+                    tog("layout", "fillShape", "Fill the shape", s.fillShape),
+                    num("layout", "fillMinFont", "Smallest fill size", s.fillMinFont),
                     num("layout", "jitter", "Jitter %", s.jitter),
                     num("layout", "seed", "Seed", s.seed),
                     tog("layout", "animate", "Animate", s.animate),
                 ]),
                 card("colors", "Colors", [
-                    dd("colors", "mode", "Color by", s.colorMode, [["theme", "Enum_col_theme", "Theme palette"], ["single", "Enum_col_single", "Single color"], ["size", "Enum_col_size", "Gradient by size"], ["measure", "Enum_col_measure", "Gradient by Color by field"]]),
+                    dd("colors", "mode", "Color by", s.colorMode, [["palette", "Enum_col_palette", "Palette"], ["theme", "Enum_col_theme", "Theme colors"],
+                        ["single", "Enum_col_single", "Single color"], ["size", "Enum_col_size", "Gradient by size"],
+                        ["measure", "Enum_col_measure", "Gradient by Color by field"], ["sentiment", "Enum_col_sentiment", "Sentiment (Color by field, centred on zero)"]]),
+                    dd("colors", "palette", "Palette", s.palette, PALETTES.map(pp => [pp.id, "Enum_pal_" + pp.id, pp.name + (pp.cb ? " (cb)" : "")] as [string, string, string])),
                     col("colors", "wordColor", "Word color", s.wordColor, true),
                     col("colors", "lowColor", "Low color", s.lowColor),
                     col("colors", "highColor", "High color", s.highColor),

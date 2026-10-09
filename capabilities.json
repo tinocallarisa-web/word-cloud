@@ -426,19 +426,19 @@
                 "displayNameKey": "Enum_sh_triangle"
               },
               {
-                "value": "star",
-                "displayName": "Star",
-                "displayNameKey": "Enum_sh_star"
+                "value": "hexagon",
+                "displayName": "Hexagon",
+                "displayNameKey": "Enum_sh_hexagon"
               },
               {
-                "value": "heart",
-                "displayName": "Heart",
-                "displayNameKey": "Enum_sh_heart"
+                "value": "icon",
+                "displayName": "Icon",
+                "displayNameKey": "Enum_sh_icon"
               },
               {
-                "value": "cloud",
-                "displayName": "Cloud",
-                "displayNameKey": "Enum_sh_cloud"
+                "value": "text",
+                "displayName": "Text",
+                "displayNameKey": "Enum_sh_text"
               },
               {
                 "value": "image",
@@ -446,6 +446,273 @@
                 "displayNameKey": "Enum_sh_image"
               }
             ]
+          }
+        },
+        "icon": {
+          "displayName": "Icon",
+          "displayNameKey": "Prop_layout_icon",
+          "description": "Used when Shape is Icon.",
+          "type": {
+            "enumeration": [
+              {
+                "value": "heart",
+                "displayName": "Heart",
+                "displayNameKey": "Enum_icon_heart"
+              },
+              {
+                "value": "star",
+                "displayName": "Star",
+                "displayNameKey": "Enum_icon_star"
+              },
+              {
+                "value": "cloud",
+                "displayName": "Cloud",
+                "displayNameKey": "Enum_icon_cloud"
+              },
+              {
+                "value": "bulb",
+                "displayName": "Bulb",
+                "displayNameKey": "Enum_icon_bulb"
+              },
+              {
+                "value": "message-circle",
+                "displayName": "Message circle",
+                "displayNameKey": "Enum_icon_message-circle"
+              },
+              {
+                "value": "message",
+                "displayName": "Message",
+                "displayNameKey": "Enum_icon_message"
+              },
+              {
+                "value": "thumb-up",
+                "displayName": "Thumb up",
+                "displayNameKey": "Enum_icon_thumb-up"
+              },
+              {
+                "value": "thumb-down",
+                "displayName": "Thumb down",
+                "displayNameKey": "Enum_icon_thumb-down"
+              },
+              {
+                "value": "trophy",
+                "displayName": "Trophy",
+                "displayNameKey": "Enum_icon_trophy"
+              },
+              {
+                "value": "rosette",
+                "displayName": "Rosette",
+                "displayNameKey": "Enum_icon_rosette"
+              },
+              {
+                "value": "user",
+                "displayName": "User",
+                "displayNameKey": "Enum_icon_user"
+              },
+              {
+                "value": "woman",
+                "displayName": "Woman",
+                "displayNameKey": "Enum_icon_woman"
+              },
+              {
+                "value": "man",
+                "displayName": "Man",
+                "displayNameKey": "Enum_icon_man"
+              },
+              {
+                "value": "home",
+                "displayName": "Home",
+                "displayNameKey": "Enum_icon_home"
+              },
+              {
+                "value": "map-pin",
+                "displayName": "Map pin",
+                "displayNameKey": "Enum_icon_map-pin"
+              },
+              {
+                "value": "location",
+                "displayName": "Location",
+                "displayNameKey": "Enum_icon_location"
+              },
+              {
+                "value": "bookmark",
+                "displayName": "Bookmark",
+                "displayNameKey": "Enum_icon_bookmark"
+              },
+              {
+                "value": "flag",
+                "displayName": "Flag",
+                "displayNameKey": "Enum_icon_flag"
+              },
+              {
+                "value": "shield",
+                "displayName": "Shield",
+                "displayNameKey": "Enum_icon_shield"
+              },
+              {
+                "value": "globe",
+                "displayName": "Globe",
+                "displayNameKey": "Enum_icon_globe"
+              },
+              {
+                "value": "apple",
+                "displayName": "Apple",
+                "displayNameKey": "Enum_icon_apple"
+              },
+              {
+                "value": "christmas-tree",
+                "displayName": "Christmas tree",
+                "displayNameKey": "Enum_icon_christmas-tree"
+              },
+              {
+                "value": "flower",
+                "displayName": "Flower",
+                "displayNameKey": "Enum_icon_flower"
+              },
+              {
+                "value": "clover",
+                "displayName": "Clover",
+                "displayNameKey": "Enum_icon_clover"
+              },
+              {
+                "value": "cactus",
+                "displayName": "Cactus",
+                "displayNameKey": "Enum_icon_cactus"
+              },
+              {
+                "value": "butterfly",
+                "displayName": "Butterfly",
+                "displayNameKey": "Enum_icon_butterfly"
+              },
+              {
+                "value": "paw",
+                "displayName": "Paw",
+                "displayNameKey": "Enum_icon_paw"
+              },
+              {
+                "value": "feather",
+                "displayName": "Feather",
+                "displayNameKey": "Enum_icon_feather"
+              },
+              {
+                "value": "mountain",
+                "displayName": "Mountain",
+                "displayNameKey": "Enum_icon_mountain"
+              },
+              {
+                "value": "sun",
+                "displayName": "Sun",
+                "displayNameKey": "Enum_icon_sun"
+              },
+              {
+                "value": "moon",
+                "displayName": "Moon",
+                "displayNameKey": "Enum_icon_moon"
+              },
+              {
+                "value": "droplet",
+                "displayName": "Droplet",
+                "displayNameKey": "Enum_icon_droplet"
+              },
+              {
+                "value": "bolt",
+                "displayName": "Bolt",
+                "displayNameKey": "Enum_icon_bolt"
+              },
+              {
+                "value": "umbrella",
+                "displayName": "Umbrella",
+                "displayNameKey": "Enum_icon_umbrella"
+              },
+              {
+                "value": "balloon",
+                "displayName": "Balloon",
+                "displayNameKey": "Enum_icon_balloon"
+              },
+              {
+                "value": "gift",
+                "displayName": "Gift",
+                "displayNameKey": "Enum_icon_gift"
+              },
+              {
+                "value": "mug",
+                "displayName": "Mug",
+                "displayNameKey": "Enum_icon_mug"
+              },
+              {
+                "value": "pizza",
+                "displayName": "Pizza",
+                "displayNameKey": "Enum_icon_pizza"
+              },
+              {
+                "value": "puzzle",
+                "displayName": "Puzzle",
+                "displayNameKey": "Enum_icon_puzzle"
+              },
+              {
+                "value": "bell",
+                "displayName": "Bell",
+                "displayNameKey": "Enum_icon_bell"
+              },
+              {
+                "value": "car",
+                "displayName": "Car",
+                "displayNameKey": "Enum_icon_car"
+              },
+              {
+                "value": "egg",
+                "displayName": "Egg",
+                "displayNameKey": "Enum_icon_egg"
+              }
+            ]
+          }
+        },
+        "shapeText": {
+          "displayName": "Shape text",
+          "displayNameKey": "Prop_layout_shapeText",
+          "description": "Used when Shape is Text. Use | for a second line.",
+          "type": {
+            "text": true
+          }
+        },
+        "silhouette": {
+          "displayName": "Show shape",
+          "displayNameKey": "Prop_layout_silhouette",
+          "type": {
+            "bool": true
+          }
+        },
+        "silhouetteColor": {
+          "displayName": "Shape color",
+          "displayNameKey": "Prop_layout_silhouetteColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "silhouetteOpacity": {
+          "displayName": "Shape opacity %",
+          "displayNameKey": "Prop_layout_silhouetteOpacity",
+          "type": {
+            "numeric": true
+          }
+        },
+        "fillShape": {
+          "displayName": "Fill the shape",
+          "displayNameKey": "Prop_layout_fillShape",
+          "description": "Repeats the words in small sizes until the shape is covered.",
+          "type": {
+            "bool": true
+          }
+        },
+        "fillMinFont": {
+          "displayName": "Smallest fill size",
+          "displayNameKey": "Prop_layout_fillMinFont",
+          "type": {
+            "numeric": true
           }
         },
         "jitter": {
@@ -482,8 +749,13 @@
           "type": {
             "enumeration": [
               {
+                "value": "palette",
+                "displayName": "Palette",
+                "displayNameKey": "Enum_col_palette"
+              },
+              {
                 "value": "theme",
-                "displayName": "Theme palette",
+                "displayName": "Theme colors",
                 "displayNameKey": "Enum_col_theme"
               },
               {
@@ -500,6 +772,180 @@
                 "value": "measure",
                 "displayName": "Gradient by Color by field",
                 "displayNameKey": "Enum_col_measure"
+              },
+              {
+                "value": "sentiment",
+                "displayName": "Sentiment (Color by field, centred on zero)",
+                "displayNameKey": "Enum_col_sentiment"
+              }
+            ]
+          }
+        },
+        "palette": {
+          "displayName": "Palette",
+          "displayNameKey": "Prop_colors_palette",
+          "description": "(cb) = safe for colour blindness.",
+          "type": {
+            "enumeration": [
+              {
+                "value": "tcviz",
+                "displayName": "TCViz",
+                "displayNameKey": "Enum_pal_tcviz"
+              },
+              {
+                "value": "okabe",
+                "displayName": "Okabe-Ito (cb)",
+                "displayNameKey": "Enum_pal_okabe"
+              },
+              {
+                "value": "tolBright",
+                "displayName": "Tol Bright (cb)",
+                "displayNameKey": "Enum_pal_tolBright"
+              },
+              {
+                "value": "tolMuted",
+                "displayName": "Tol Muted (cb)",
+                "displayNameKey": "Enum_pal_tolMuted"
+              },
+              {
+                "value": "tolVibrant",
+                "displayName": "Tol Vibrant (cb)",
+                "displayNameKey": "Enum_pal_tolVibrant"
+              },
+              {
+                "value": "tableau",
+                "displayName": "Tableau 10",
+                "displayNameKey": "Enum_pal_tableau"
+              },
+              {
+                "value": "vivid",
+                "displayName": "Vivid",
+                "displayNameKey": "Enum_pal_vivid"
+              },
+              {
+                "value": "pastel",
+                "displayName": "Pastel",
+                "displayNameKey": "Enum_pal_pastel"
+              },
+              {
+                "value": "earth",
+                "displayName": "Earth",
+                "displayNameKey": "Enum_pal_earth"
+              },
+              {
+                "value": "ocean",
+                "displayName": "Ocean",
+                "displayNameKey": "Enum_pal_ocean"
+              },
+              {
+                "value": "sunset",
+                "displayName": "Sunset",
+                "displayNameKey": "Enum_pal_sunset"
+              },
+              {
+                "value": "forest",
+                "displayName": "Forest",
+                "displayNameKey": "Enum_pal_forest"
+              },
+              {
+                "value": "candy",
+                "displayName": "Candy",
+                "displayNameKey": "Enum_pal_candy"
+              },
+              {
+                "value": "corporate",
+                "displayName": "Corporate",
+                "displayNameKey": "Enum_pal_corporate"
+              },
+              {
+                "value": "neon",
+                "displayName": "Neon",
+                "displayNameKey": "Enum_pal_neon"
+              },
+              {
+                "value": "retro",
+                "displayName": "Retro",
+                "displayNameKey": "Enum_pal_retro"
+              },
+              {
+                "value": "blues",
+                "displayName": "Blues (cb)",
+                "displayNameKey": "Enum_pal_blues"
+              },
+              {
+                "value": "greens",
+                "displayName": "Greens (cb)",
+                "displayNameKey": "Enum_pal_greens"
+              },
+              {
+                "value": "tealBlue",
+                "displayName": "Teal to blue (cb)",
+                "displayNameKey": "Enum_pal_tealBlue"
+              },
+              {
+                "value": "viridis",
+                "displayName": "Viridis (cb)",
+                "displayNameKey": "Enum_pal_viridis"
+              },
+              {
+                "value": "cividis",
+                "displayName": "Cividis (cb)",
+                "displayNameKey": "Enum_pal_cividis"
+              },
+              {
+                "value": "magma",
+                "displayName": "Magma (cb)",
+                "displayNameKey": "Enum_pal_magma"
+              },
+              {
+                "value": "plasma",
+                "displayName": "Plasma (cb)",
+                "displayNameKey": "Enum_pal_plasma"
+              },
+              {
+                "value": "ink",
+                "displayName": "Ink (greys) (cb)",
+                "displayNameKey": "Enum_pal_ink"
+              },
+              {
+                "value": "warm",
+                "displayName": "Warm",
+                "displayNameKey": "Enum_pal_warm"
+              },
+              {
+                "value": "sentiment",
+                "displayName": "Sentiment (red - grey - green)",
+                "displayNameKey": "Enum_pal_sentiment"
+              },
+              {
+                "value": "blueOrange",
+                "displayName": "Blue - orange (cb)",
+                "displayNameKey": "Enum_pal_blueOrange"
+              },
+              {
+                "value": "tolSunset",
+                "displayName": "Tol Sunset (cb)",
+                "displayNameKey": "Enum_pal_tolSunset"
+              },
+              {
+                "value": "purpleGreen",
+                "displayName": "Purple - green (cb)",
+                "displayNameKey": "Enum_pal_purpleGreen"
+              },
+              {
+                "value": "brownTeal",
+                "displayName": "Brown - teal (cb)",
+                "displayNameKey": "Enum_pal_brownTeal"
+              },
+              {
+                "value": "pinkGreen",
+                "displayName": "Pink - green (cb)",
+                "displayNameKey": "Enum_pal_pinkGreen"
+              },
+              {
+                "value": "custom",
+                "displayName": "Custom (Low and High colors)",
+                "displayNameKey": "Enum_pal_custom"
               }
             ]
           }
