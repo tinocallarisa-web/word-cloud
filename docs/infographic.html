@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Cloud by TCViz — Visual Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg:#FAF9F5;  --bg2:#EDE9DE;  --bd:#F5F3ED;  --line:#DAD9D4;
+  --t1:#3D3929;  --t2:#535146;   --t3:#83827D;
+  --acc:#2B6CB0; --accd:#1F4E80; --acc2:#3E9C5B; --acc2l:#D9EFE0;
+}
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #dl-bar, #fit-check { display: none; }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
+#infographic{background:var(--bg);color:var(--t1);width:1366px;height:768px;overflow:hidden;display:flex;flex-direction:column;padding:12px 32px 8px;}
+#fit-check{position:fixed;top:12px;right:12px;z-index:10000;background:#B00020;color:#fff;font:700 13px 'Segoe UI',sans-serif;padding:6px 12px;border-radius:6px;}
+
+.header{display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;margin-bottom:8px;}
+.header-title h1{font-size:28px;font-weight:700;color:var(--t1);line-height:1.05;}
+.header-title h1 span{color:var(--acc)}
+.header-title p{font-size:12px;color:var(--t3);margin-top:4px;line-height:1.4;}
+.header-title p strong{color:var(--acc)}
+
+.use-cases{background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:6px 18px;display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.uc-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:2px;white-space:nowrap;flex-shrink:0;}
+.uc-grid{display:flex;flex:1}
+.uc-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 12px;border-right:1px solid var(--line);flex:1;}
+.uc-item:last-child{border-right:none}
+.uc-item i{font-size:16px;color:var(--acc)}
+.uc-item span{font-size:11px;color:var(--t2)}
+.uc-callout{flex-shrink:0;background:var(--acc);color:#fff;border-radius:10px;padding:5px 12px;max-width:230px;font-size:10.5px;line-height:1.35;}
+.uc-callout strong{color:#fff;display:block;margin-bottom:1px;font-size:11px}
+
+.main{display:grid;grid-template-columns:1fr 200px 1fr;gap:16px;margin-bottom:8px;}
+.col-left,.col-right{display:flex;flex-direction:column;gap:6px}
+
+.step{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 12px;}
+.step-accent{border:2px solid var(--acc);}
+.step-purple{border:2px solid var(--acc2);}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--acc);color:#fff;font-size:9px;font-weight:700;margin-right:6px;vertical-align:middle;}
+.step h3{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px;line-height:1.2}
+.step p{font-size:10.5px;color:var(--t2);line-height:1.35}
+.step p strong{color:var(--t1)}
+.step ul{list-style:none;margin-top:3px;display:flex;flex-direction:column;gap:1px}
+.step ul li{font-size:10.5px;color:var(--t2);display:flex;align-items:flex-start;gap:5px;line-height:1.3}
+.step ul li i{font-size:11px;flex-shrink:0;margin-top:1px}
+.step ul li i.ok{color:var(--acc)}
+.step ul li i.bad{color:var(--acc2)}
+.step-label{display:inline-block;vertical-align:middle;font-size:9.5px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.step-label.purple{color:var(--acc2)}
+.formula{background:var(--bd);border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin:4px 0 0;font-size:10.5px;color:var(--acc);text-align:center;font-weight:600;}
+
+.center{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.center-circle{width:112px;height:112px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;color:#fff;}
+.center-circle .big{font-size:32px;font-weight:700;color:#fff;line-height:1}
+.center-circle .small{font-size:9px;color:#fff;text-transform:uppercase;letter-spacing:0.8px;line-height:1.3;max-width:90px}
+.stat-pill{background:var(--bd);border:1px solid var(--line);border-radius:6px;padding:3px 8px;width:100%;text-align:center;}
+.stat-pill .label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px}
+.stat-pill .value{font-size:16px;font-weight:700;color:var(--acc);line-height:1.15}
+.stat-pill .value.purple{color:var(--acc2)}
+.stat-pill .desc{font-size:9px;color:var(--t3);margin-top:0}
+.connector-line{width:2px;height:4px;background:var(--line);margin:0 auto}
+
+.flow-section{margin-bottom:8px}
+.flow-title{font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.flow{display:flex;align-items:center;gap:8px;background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:6px 20px;}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+.flow-step i{font-size:15px;color:#fff;background:var(--acc);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.flow-step span{font-size:10.5px;color:var(--t2);text-align:center;line-height:1.2}
+.flow-arrow{color:var(--t3);font-size:16px;flex-shrink:0}
+.flow-tagline{text-align:center;font-size:11px;color:var(--t3);margin-top:3px;font-style:italic}
+
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1;}
+.bottom-card{background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:7px 14px;}
+.section-title{font-size:12px;font-weight:700;color:var(--acc);margin-bottom:3px;}
+.benefit{display:flex;align-items:flex-start;gap:7px;padding:2px 0;}
+.benefit i{font-size:14px;color:var(--acc);flex-shrink:0;margin-top:1px}
+.benefit-name{font-size:11px;font-weight:600;color:var(--t1)}
+.benefit-desc{font-size:10px;color:var(--t2);line-height:1.3}
+.tip{display:flex;align-items:flex-start;gap:6px;padding:1.5px 0;font-size:10.5px;color:var(--t2);line-height:1.3}
+.tip i{font-size:11px;color:var(--acc);flex-shrink:0;margin-top:2px}
+.tip-cta{margin-top:4px;background:var(--acc);border-radius:8px;padding:4px 10px;font-size:10px;color:#fff;line-height:1.3;}
+.tip-cta strong{display:block;color:#fff;font-size:10.5px}
+
+.footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:5px;border-top:1px solid var(--line);}
+.footer-links{display:flex;gap:18px}
+.footer-links a{font-size:12px;color:var(--t3);text-decoration:none}
+.footer-links a:hover{color:var(--acc)}
+
+/* compactado para 1366x768 */
+#infographic{padding:10px 28px 6px;}
+.header{margin-bottom:6px;}
+.header > svg:last-child{width:133px;height:70px;}
+.uc-item{flex-direction:row;gap:5px;justify-content:center;}
+.step h3{display:inline;margin-left:6px;vertical-align:middle;}
+.step h3 + p, .step h3 + ul{margin-top:2px;}
+.col-left,.col-right{gap:5px}
+.main{margin-bottom:6px;}
+.flow-section{margin-bottom:6px}
+.flow{padding:4px 20px;}
+.flow-step{flex-direction:row;gap:6px;justify-content:center}
+.flow-step span{text-align:left}
+.flow-step i{width:22px;height:22px;font-size:13px;flex-shrink:0}
+.flow-tagline{margin-top:2px}
+.bottom-card{padding:5px 14px;}
+.benefit{padding:1px 0;}
+.tip{padding:1px 0;}
+.uc-callout{max-width:380px;}
+.use-cases{padding:4px 18px;}
+.bottom-grid{gap:12px;}
+.tip{font-size:10.2px;}
+.main{gap:12px;}
+.step ul{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;row-gap:1px}
+.step ul li[style]{margin-top:0!important}
+.benefit-desc{font-size:10px;line-height:1.25}
+.step{padding:5px 12px;}
+.flow-title{margin-bottom:2px}
+.center{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:center;justify-items:center}
+.center .center-circle{grid-column:1 / -1;width:100px;height:100px}
+.center .connector-line{display:none}
+.center-circle .big{font-size:28px}
+.stat-pill{padding:3px 4px}
+.stat-pill .label{font-size:8.5px;line-height:1.15}
+.stat-pill .desc{font-size:8.5px;line-height:1.15}
+.col-right .step:last-child ul{grid-template-columns:1fr}
+</style>
+</head>
+<body>
+
+<!-- DOWNLOAD BUTTON -->
+<div id="dl-bar" style="position:fixed;top:10px;left:10px;z-index:9999;">
+  <button id="dl-btn" onclick="downloadPNG()" style="background:#2B6CB0;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    ⬇ Download PNG (1366×768)
+  </button>
+</div>
+<script>
+async function downloadPNG() {
+  const btn = document.getElementById('dl-btn');
+  const bar = document.getElementById('dl-bar');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  bar.style.display = 'none';
+  await new Promise(r => setTimeout(r, 300));
+  const el = document.getElementById('infographic');
+  const canvas = await html2canvas(el, {
+    width: 1366,
+    height: 768,
+    scale: 1,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#FAF9F5',
+    x: 0, y: 0
+  });
+  bar.style.display = '';
+  btn.textContent = '⬇ Download PNG (1366×768)';
+  btn.disabled = false;
+  const link = document.createElement('a');
+  link.download = 'word-cloud-infographic.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+
+<div id="infographic">
+<!-- HEADER -->
+<div class="header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 828 362" width="160" height="70" aria-label="TCViz">
+    <defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1F4E80"/><stop offset="0.55" stop-color="#2B6CB0"/><stop offset="1" stop-color="#3E9C5B"/>
+    </linearGradient></defs>
+    <g transform="translate(40,46)">
+      <rect x="22" y="20" width="150" height="150" rx="30" fill="none" stroke="url(#g)" stroke-width="11"/>
+      <g fill="url(#g)">
+        <rect x="42" y="110" width="20" height="58" rx="5"/><rect x="70" y="86" width="20" height="82" rx="5"/>
+        <rect x="98" y="62" width="20" height="106" rx="5"/><rect x="126" y="38" width="20" height="130" rx="5"/>
+      </g>
+    </g>
+    <text x="258" y="246" font-family="Poppins,sans-serif" font-weight="700" font-size="196" letter-spacing="-4">
+      <tspan fill="url(#g)">tc</tspan><tspan fill="#3D3929">viz</tspan>
+    </text>
+    <text x="264" y="306" font-family="Poppins,sans-serif" font-weight="500" font-size="31" letter-spacing="6.5" fill="#83827D">VISUALS TO POWER BI</text>
+  </svg>
+
+  <div class="header-title">
+    <h1>Word Cloud <span>by TCViz</span></h1>
+    <p>Free text, shapes and sentiment for Power BI — every feature free, no licence, no watermark.<br>
+    From <strong>open answers</strong> to <strong>what people actually said</strong> in a few clicks.</p>
+  </div>
+  <svg width="190" height="100" viewBox="0 0 190 100" aria-hidden="true" font-family="Segoe UI,sans-serif" font-weight="700">
+    <text x="40" y="58" font-size="30" fill="#1E8449">excellent</text>
+    <text x="8" y="30" font-size="15" fill="#2B6CB0">service</text>
+    <text x="88" y="26" font-size="19" fill="#3E9C5B">fast</text>
+    <text x="138" y="22" font-size="12" fill="#C0392B">late</text>
+    <text x="10" y="82" font-size="18" fill="#C0392B">refund</text>
+    <text x="84" y="84" font-size="22" fill="#1F4E80">friendly</text>
+    <text x="40" y="97" font-size="11" fill="#83827D">price</text>
+    <text x="6" y="56" font-size="11" fill="#9BD3AE">easy</text>
+    <text x="150" y="96" font-size="10" fill="#E8A39B">slow</text>
+  </svg>
+</div>
+
+<!-- USE CASES -->
+<div class="use-cases">
+  <div class="uc-label">Use cases</div>
+  <div class="uc-grid">
+    <div class="uc-item"><i class="ti ti-clipboard-list" aria-hidden="true"></i><span>Surveys</span></div>
+    <div class="uc-item"><i class="ti ti-ticket" aria-hidden="true"></i><span>Tickets</span></div>
+    <div class="uc-item"><i class="ti ti-star" aria-hidden="true"></i><span>Reviews</span></div>
+    <div class="uc-item"><i class="ti ti-mood-smile" aria-hidden="true"></i><span>NPS comments</span></div>
+    <div class="uc-item"><i class="ti ti-search" aria-hidden="true"></i><span>Keywords</span></div>
+    <div class="uc-item"><i class="ti ti-tags" aria-hidden="true"></i><span>Tags</span></div>
+    <div class="uc-item"><i class="ti ti-users" aria-hidden="true"></i><span>HR feedback</span></div>
+    <div class="uc-item"><i class="ti ti-heart" aria-hidden="true"></i><span>Brand pages</span></div>
+  </div>
+  <div class="uc-callout">
+    <strong>Shift your mindset:</strong>
+    The open answers are where people tell you why. A word cloud is how you read them all at once.
+  </div>
+</div>
+
+<!-- MAIN 3-COL -->
+<div class="main">
+  <div class="col-left">
+    <div class="step step-accent">
+      <div class="step-num">1</div>
+      <div class="step-label">0–1 min</div>
+      <h3>Get started in seconds</h3>
+      <p>A column of words in <strong>Words</strong> — or comments in <strong>Text (free text)</strong>.</p>
+      <ul>
+        <li><i class="ti ti-check ok"></i>Size (optional): a measure, or the count</li>
+        <li><i class="ti ti-check ok"></i>Start page lists the three steps</li>
+        <li><i class="ti ti-check ok"></i>Tooltips and report page tooltips</li>
+        <li><i class="ti ti-check ok"></i>Words with a hierarchy: drilldown</li>
+      </ul>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-label">1–3 min</div>
+      <h3>Free text that cleans itself</h3>
+      <p>Comments are split into words and the filler words removed — in the languages it detects.</p>
+      <div class="formula">en · es · pt · fr · de · it &nbsp;|&nbsp; detected automatically</div>
+      <ul>
+        <li><i class="ti ti-check ok"></i>Two-word phrases: “late delivery”</li>
+        <li><i class="ti ti-check ok"></i>Exclusion list and minimum length</li>
+      </ul>
+    </div>
+    <div class="step step-purple">
+      <div class="step-num" style="background:#3E9C5B">3</div>
+      <div class="step-label purple">3–5 min</div>
+      <h3>Sentiment without DAX</h3>
+      <p>Score in <strong>Color value</strong> as <strong>Average</strong>, Color by <strong style="color:#3E9C5B">Sentiment</strong>, Neutral value at the middle.</p>
+      <div class="formula">1–10 score · neutral 5.5 → <span style="color:#C0392B">red</span> · grey · <span style="color:#1E8449">green</span></div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="center-circle">
+      <span class="big">Free</span>
+      <span class="small">every feature, no licence</span>
+    </div>
+    <div class="connector-line"></div>
+    <div class="stat-pill">
+      <div class="label">Palettes</div>
+      <div class="value">32</div>
+      <div class="desc">18 colour-blind safe</div>
+    </div>
+    <div class="stat-pill">
+      <div class="label">Icon shapes</div>
+      <div class="value purple">42</div>
+      <div class="desc">+ text, image, 6 shapes</div>
+    </div>
+    <div class="stat-pill">
+      <div class="label">Stopwords</div>
+      <div class="value">6</div>
+      <div class="desc">languages, auto-detected</div>
+    </div>
+    <div class="stat-pill">
+      <div class="label">Format pane</div>
+      <div class="value">12</div>
+      <div class="desc">languages</div>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="step step-purple">
+      <div class="step-num" style="background:#3E9C5B">4</div>
+      <div class="step-label purple">5–8 min</div>
+      <h3>Give the cloud a shape</h3>
+      <p>Circle, hexagon, one of <strong>42 icons</strong>, your own <strong>text</strong> or your <strong>logo</strong> from the model.</p>
+      <ul>
+        <li><i class="ti ti-check ok"></i>Visible silhouette and outline</li>
+        <li><i class="ti ti-check ok"></i>Dense fill so the shape reads</li>
+        <li><i class="ti ti-check ok"></i>Keep proportions or stretch</li>
+        <li><i class="ti ti-check ok"></i>Logo as Base64: nothing loaded from the web</li>
+      </ul>
+    </div>
+    <div class="step step-accent">
+      <div class="step-num">5</div>
+      <div class="step-label">8–10 min</div>
+      <h3>Style it in one click</h3>
+      <p>Templates <strong>Clean, Bold, Editorial, Monochrome, Poster</strong> — then adjust anything; your settings win.</p>
+      <ul>
+        <li><i class="ti ti-check ok"></i>fx on word colour</li>
+        <li><i class="ti ti-check ok"></i>Format on the canvas</li>
+        <li><i class="ti ti-check ok"></i>Orientation and custom angles</li>
+        <li><i class="ti ti-check ok"></i>Fixed seed: same cloud every time</li>
+      </ul>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-label">10–12 min</div>
+      <h3>Avoid common mistakes</h3>
+      <ul>
+        <li><i class="ti ti-x bad"></i>Score summed instead of averaged</li>
+        <li><i class="ti ti-x bad"></i>Repeated answers counted once</li>
+        <li><i class="ti ti-x bad"></i>1,000 words in a small tile</li>
+        <li style="margin-top:3px"><i class="ti ti-check ok"></i>Response ID in Size as Count</li>
+        <li><i class="ti ti-check ok"></i>Watch the warning icon: it says what was left out</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FLOW -->
+<div class="flow-section">
+  <div class="flow-title">Analysis workflow with Word Cloud</div>
+  <div class="flow">
+    <div class="flow-step"><i class="ti ti-database"></i><span>Connect<br>your data</span></div>
+    <span class="flow-arrow">›</span>
+    <div class="flow-step"><i class="ti ti-text-size"></i><span>Words or<br>free text</span></div>
+    <span class="flow-arrow">›</span>
+    <div class="flow-step"><i class="ti ti-filter"></i><span>Remove<br>filler words</span></div>
+    <span class="flow-arrow">›</span>
+    <div class="flow-step"><i class="ti ti-mood-happy"></i><span>Colour by<br>sentiment</span></div>
+    <span class="flow-arrow">›</span>
+    <div class="flow-step"><i class="ti ti-heart"></i><span>Pick a<br>shape</span></div>
+    <span class="flow-arrow">›</span>
+    <div class="flow-step"><i class="ti ti-pointer"></i><span>Click to<br>filter</span></div>
+    <span class="flow-arrow">›</span>
+    <div class="flow-step"><i class="ti ti-presentation"></i><span>Present<br>with impact</span></div>
+  </div>
+  <div class="flow-tagline">Read every answer at once — and see which words come with complaints.</div>
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom-grid">
+  <div class="bottom-card">
+    <div class="section-title">Key benefits</div>
+    <div class="benefit"><i class="ti ti-message-circle"></i><div><div class="benefit-name">Read what people said</div><div class="benefit-desc">Thousands of open answers in one view, with the filler words already gone.</div></div></div>
+    <div class="benefit"><i class="ti ti-mood-sad"></i><div><div class="benefit-name">See where the complaints are</div><div class="benefit-desc">Each word takes the average score of the comments that mention it.</div></div></div>
+    <div class="benefit"><i class="ti ti-filter"></i><div><div class="benefit-name">Native Power BI interactions</div><div class="benefit-desc">Click a word to filter the page, Ctrl+click for several; bookmarks keep the selection.</div></div></div>
+    <div class="benefit"><i class="ti ti-lock"></i><div><div class="benefit-name">Private by design</div><div class="benefit-desc">No network permission: nothing is sent, nothing is loaded.</div></div></div>
+  </div>
+  <div class="bottom-card">
+    <div class="section-title">Key takeaways</div>
+    <div class="tip"><i class="ti ti-check"></i><span>Words for keywords and tags; Text for anything people wrote.</span></div>
+    <div class="tip"><i class="ti ti-check"></i><span>Scores go in Color value as Average, never Sum.</span></div>
+    <div class="tip"><i class="ti ti-check"></i><span>Identical answers are grouped by Power BI: count the response ID in Size.</span></div>
+    <div class="tip"><i class="ti ti-check"></i><span>In Text mode, clicking a word filters the comments that contain it.</span></div>
+    <div class="tip"><i class="ti ti-check"></i><span>Keyboard: arrows move word to word, Enter selects, Esc clears.</span></div>
+    <div class="tip-cta"><strong>One visual for every open question.</strong>Surveys, tickets, reviews or keywords — same three steps.</div>
+  </div>
+  <div class="bottom-card">
+    <div class="section-title">Format pane — quick reference</div>
+    <div class="tip"><i class="ti ti-palette"></i><span><strong style="color:#3D3929">Style template</strong> — Clean, Bold, Editorial, Monochrome, Poster</span></div>
+    <div class="tip"><i class="ti ti-letter-case"></i><span><strong style="color:#3D3929">Words</strong> — Maximum words, font sizes, scale, font, padding, shrink to fit</span></div>
+    <div class="tip"><i class="ti ti-language"></i><span><strong style="color:#3D3929">Free text</strong> — Languages, minimum length, exclusions, phrases</span></div>
+    <div class="tip"><i class="ti ti-rotate"></i><span><strong style="color:#3D3929">Orientation</strong> — Horizontal, vertical, mixed, custom angles</span></div>
+    <div class="tip"><i class="ti ti-shape"></i><span><strong style="color:#3D3929">Layout</strong> — Shape, icon, text, silhouette, outline, fill, jitter, seed</span></div>
+    <div class="tip"><i class="ti ti-color-swatch"></i><span><strong style="color:#3D3929">Colors</strong> — Color by, palette, fx, low/high, neutral value, background</span></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div style="display:flex;align-items:center;gap:10px">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 828 362" width="70" height="30" aria-label="TCViz">
+      <defs><linearGradient id="gf" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#1F4E80"/><stop offset="0.55" stop-color="#2B6CB0"/><stop offset="1" stop-color="#3E9C5B"/>
+      </linearGradient></defs>
+      <g transform="translate(40,46)">
+        <rect x="22" y="20" width="150" height="150" rx="30" fill="none" stroke="url(#gf)" stroke-width="11"/>
+        <g fill="url(#gf)">
+          <rect x="42" y="110" width="20" height="58" rx="5"/><rect x="70" y="86" width="20" height="82" rx="5"/>
+          <rect x="98" y="62" width="20" height="106" rx="5"/><rect x="126" y="38" width="20" height="130" rx="5"/>
+        </g>
+      </g>
+      <text x="258" y="246" font-family="Poppins,sans-serif" font-weight="700" font-size="196" letter-spacing="-4">
+        <tspan fill="url(#gf)">tc</tspan><tspan fill="#3D3929">viz</tspan>
+      </text>
+      <text x="264" y="306" font-family="Poppins,sans-serif" font-weight="500" font-size="31" letter-spacing="6.5" fill="#83827D">VISUALS TO POWER BI</text>
+    </svg>
+    <span style="color:#83827D;font-size:11px">Word Cloud by TCViz 1.0 · Power BI Custom Visual</span>
+  </div>
+  <div class="footer-links">
+    <a href="support.html">Support</a>
+    <a href="privacy.html">Privacy policy</a>
+    <a href="terms.html">Terms of use</a>
+    <a href="https://github.com/tinocallarisa-web/word-cloud">GitHub</a>
+  </div>
+</div>
+
+</div><!-- /#infographic -->
+<div id="fit-check" hidden></div>
+<script>
+(function () {
+  function check() {
+    var el = document.getElementById('infographic');
+    var h = el.scrollHeight, b = document.getElementById('fit-check');
+    if (h > 768) { b.textContent = 'OVERFLOW: ' + (h - 768) + 'px'; b.hidden = false; document.title = 'OVERFLOW'; }
+    else { b.hidden = true; document.title = 'FIT'; }
+  }
+  window.addEventListener('load', function () {
+    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    ready.then(function () { setTimeout(check, 100); });
+  });
+})();
+</script>
+</body>
+</html>

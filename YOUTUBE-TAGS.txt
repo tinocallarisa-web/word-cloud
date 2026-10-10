@@ -1,0 +1,13 @@
+=========================================================
+WORD CLOUD BY TCVIZ — YouTube Tags (v1.0.0.0)
+=========================================================
+
+--- MAIN TAG BLOCK (YouTube's limit is 500) ---
+
+power bi,power bi word cloud,word cloud,power bi custom visual,free power bi visual,survey comments,survey analysis power bi,text analysis,open ended questions,sentiment analysis,customer feedback,nps comments,power bi no dax,tag cloud,power bi appsource,power bi visuals,data visualization,tcviz
+
+Notes:
+- "power bi word cloud" and "word cloud" carry the search.
+- "survey comments", "open ended questions" and "customer feedback" are the problem words:
+  the person searching has a survey and a meeting.
+- "free power bi visual" because free is the argument of this visual.
