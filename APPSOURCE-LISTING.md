@@ -46,7 +46,7 @@ Pendiente de grabar. Solo la forma `https://www.youtube.com/watch?v=<id>`.
 ```
 Most word clouds show you which words are big. They don't show you what people actually said, in which language, or whether they said it happily.
 
-Word Cloud by TCViz is free — every feature, no licence, no watermark. Drop in a column of words, or raw survey comments: it detects the language, removes filler words and counts the rest. Shape the cloud as a circle, an icon, your own text or your logo; colour it by value, by sentiment or with 32 palettes, 18 of them colour-blind safe.
+Word Cloud by TCViz is free — every feature, no licence, no watermark. Drop in a column of words, or raw survey comments: it detects the language, removes filler words and counts the rest. Shape the cloud as a circle, an icon, your own text or your logo; colour it by value, by sentiment or with 32 palettes, 17 of them colour-blind safe.
 
 WORDS OR FREE TEXT
 
@@ -68,7 +68,7 @@ SHAPES
 LOOK
 
 • Style templates: Clean, Bold, Editorial, Monochrome, Poster
-• 32 palettes, 18 colour-blind safe; theme colours; single colour with conditional formatting (fx); gradients by size or by a measure
+• 32 palettes, 17 colour-blind safe; theme colours; single colour with conditional formatting (fx); gradients by size or by a measure
 • Horizontal, vertical, mixed or custom angles
 • A fixed seed: the same report always draws the same cloud
 

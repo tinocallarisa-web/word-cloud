@@ -182,7 +182,8 @@ export class Visual implements IVisual {
 
         // Clic en el fondo: limpiar selección. Menú contextual también en vacío.
         this.svg.addEventListener("click", (e) => {
-            if (e.target === this.svg || (e.target as Element).getAttribute?.("data-bg")) {
+            // Cualquier sitio que no sea una palabra (fondo, silueta, borde) limpia, como en los visuales nativos.
+            if (!(e.target as Element).closest?.("[data-word]")) {
                 if (!this.canInteract || this.formatMode) return;
                 this.selectionManager.clear().then(() => this.paintSelection());
             }
@@ -775,7 +776,10 @@ export class Visual implements IVisual {
 
     private select(w: WordDatum, multi: boolean): void {
         if (!this.canInteract || !w.ids.length) return;
-        this.selectionManager.select(w.ids, multi).then(() => this.paintSelection());
+        // Clic normal sobre la palabra que ya es toda la selección: se deselecciona (como una barra nativa).
+        const sel = this.selectionManager.getSelectionIds() as ISelectionId[];
+        const same = !multi && sel.length === w.ids.length && w.ids.every(id => sel.some(s => (s as any).equals?.(id)));
+        (same ? this.selectionManager.clear() : this.selectionManager.select(w.ids, multi)).then(() => this.paintSelection());
     }
 
     private showTooltip(w: WordDatum, x: number, y: number): void {

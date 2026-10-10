@@ -33,7 +33,7 @@ WHAT IT DOES
 • Words or free text, with stopwords in English, Spanish, Portuguese, French, German and Italian
 • Two-word phrases, exclusion list, minimum word length
 • Rectangle, circle, ellipse, diamond, triangle, hexagon, 42 icons, your text or your logo
-• 32 palettes (18 colour-blind safe), theme colours, fx, gradients and sentiment
+• 32 palettes (17 colour-blind safe), theme colours, fx, gradients and sentiment
 • Cross-filtering, highlighting, bookmarks, drilldown, report page tooltips
 • Keyboard navigation, screen reader labels, high contrast
 • Format pane in 12 languages
