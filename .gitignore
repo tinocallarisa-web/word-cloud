@@ -5,3 +5,4 @@ webpack.statistics.*.html
 package-lock.json
 *.pbiviz
 SPEC.md
+_releases/
