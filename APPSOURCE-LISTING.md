@@ -37,7 +37,9 @@ text analysis
 
 ## Video
 
-Pendiente de grabar. Solo la forma `https://www.youtube.com/watch?v=<id>`.
+```
+https://www.youtube.com/watch?v=CiEDU32DSj4
+```
 
 ---
 
