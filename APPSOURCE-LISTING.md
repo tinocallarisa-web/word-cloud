@@ -74,7 +74,7 @@ LOOK
 • Horizontal, vertical, mixed or custom angles
 • A fixed seed: the same report always draws the same cloud
 
-POWER BI, ALL OF IT
+WORKS LIKE A NATIVE VISUAL
 
 • Click a word to filter the page; Ctrl+click for several. In Text mode a word filters the comments that contain it.
 • Highlighting from other visuals, bookmarks, drilldown on a hierarchy, context menu
