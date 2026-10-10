@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Cloud by TCViz — Color palettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg:#FAF9F5;  --bg2:#EDE9DE;  --bd:#F5F3ED;  --line:#DAD9D4;
+  --t1:#3D3929;  --t2:#535146;   --t3:#83827D;
+  --acc:#2B6CB0; --accd:#1F4E80; --acc2:#3E9C5B; --acc2l:#D9EFE0;
+}
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #dl-bar, #fit-check { display: none; }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
+#infographic{background:var(--bg);color:var(--t1);width:1366px;height:768px;overflow:hidden;display:flex;flex-direction:column;padding:12px 32px 8px;}
+#fit-check{position:fixed;top:12px;right:12px;z-index:10000;background:#B00020;color:#fff;font:700 13px 'Segoe UI',sans-serif;padding:6px 12px;border-radius:6px;}
+
+.header{display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;margin-bottom:8px;}
+.header-title h1{font-size:28px;font-weight:700;color:var(--t1);line-height:1.05;}
+.header-title h1 span{color:var(--acc)}
+.header-title p{font-size:12px;color:var(--t3);margin-top:4px;line-height:1.4;}
+.header-title p strong{color:var(--acc)}
+
+.use-cases{background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:6px 18px;display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.uc-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:2px;white-space:nowrap;flex-shrink:0;}
+.uc-grid{display:flex;flex:1}
+.uc-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 12px;border-right:1px solid var(--line);flex:1;}
+.uc-item:last-child{border-right:none}
+.uc-item i{font-size:16px;color:var(--acc)}
+.uc-item span{font-size:11px;color:var(--t2)}
+.uc-callout{flex-shrink:0;background:var(--acc);color:#fff;border-radius:10px;padding:5px 12px;max-width:230px;font-size:10.5px;line-height:1.35;}
+.uc-callout strong{color:#fff;display:block;margin-bottom:1px;font-size:11px}
+
+.main{display:grid;grid-template-columns:1fr 200px 1fr;gap:16px;margin-bottom:8px;}
+.col-left,.col-right{display:flex;flex-direction:column;gap:6px}
+
+.step{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 12px;}
+.step-accent{border:2px solid var(--acc);}
+.step-purple{border:2px solid var(--acc2);}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--acc);color:#fff;font-size:9px;font-weight:700;margin-right:6px;vertical-align:middle;}
+.step h3{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px;line-height:1.2}
+.step p{font-size:10.5px;color:var(--t2);line-height:1.35}
+.step p strong{color:var(--t1)}
+.step ul{list-style:none;margin-top:3px;display:flex;flex-direction:column;gap:1px}
+.step ul li{font-size:10.5px;color:var(--t2);display:flex;align-items:flex-start;gap:5px;line-height:1.3}
+.step ul li i{font-size:11px;flex-shrink:0;margin-top:1px}
+.step ul li i.ok{color:var(--acc)}
+.step ul li i.bad{color:var(--acc2)}
+.step-label{display:inline-block;vertical-align:middle;font-size:9.5px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.step-label.purple{color:var(--acc2)}
+.formula{background:var(--bd);border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin:4px 0 0;font-size:10.5px;color:var(--acc);text-align:center;font-weight:600;}
+
+.center{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.center-circle{width:112px;height:112px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;color:#fff;}
+.center-circle .big{font-size:32px;font-weight:700;color:#fff;line-height:1}
+.center-circle .small{font-size:9px;color:#fff;text-transform:uppercase;letter-spacing:0.8px;line-height:1.3;max-width:90px}
+.stat-pill{background:var(--bd);border:1px solid var(--line);border-radius:6px;padding:3px 8px;width:100%;text-align:center;}
+.stat-pill .label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px}
+.stat-pill .value{font-size:16px;font-weight:700;color:var(--acc);line-height:1.15}
+.stat-pill .value.purple{color:var(--acc2)}
+.stat-pill .desc{font-size:9px;color:var(--t3);margin-top:0}
+.connector-line{width:2px;height:4px;background:var(--line);margin:0 auto}
+
+.flow-section{margin-bottom:8px}
+.flow-title{font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.flow{display:flex;align-items:center;gap:8px;background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:6px 20px;}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+.flow-step i{font-size:15px;color:#fff;background:var(--acc);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.flow-step span{font-size:10.5px;color:var(--t2);text-align:center;line-height:1.2}
+.flow-arrow{color:var(--t3);font-size:16px;flex-shrink:0}
+.flow-tagline{text-align:center;font-size:11px;color:var(--t3);margin-top:3px;font-style:italic}
+
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1;}
+.bottom-card{background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:7px 14px;}
+.section-title{font-size:12px;font-weight:700;color:var(--acc);margin-bottom:3px;}
+.benefit{display:flex;align-items:flex-start;gap:7px;padding:2px 0;}
+.benefit i{font-size:14px;color:var(--acc);flex-shrink:0;margin-top:1px}
+.benefit-name{font-size:11px;font-weight:600;color:var(--t1)}
+.benefit-desc{font-size:10px;color:var(--t2);line-height:1.3}
+.tip{display:flex;align-items:flex-start;gap:6px;padding:1.5px 0;font-size:10.5px;color:var(--t2);line-height:1.3}
+.tip i{font-size:11px;color:var(--acc);flex-shrink:0;margin-top:2px}
+.tip-cta{margin-top:4px;background:var(--acc);border-radius:8px;padding:4px 10px;font-size:10px;color:#fff;line-height:1.3;}
+.tip-cta strong{display:block;color:#fff;font-size:10.5px}
+
+.footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:5px;border-top:1px solid var(--line);}
+.footer-links{display:flex;gap:18px}
+.footer-links a{font-size:12px;color:var(--t3);text-decoration:none}
+.footer-links a:hover{color:var(--acc)}
+
+/* compactado para 1366x768 */
+#infographic{padding:10px 28px 6px;}
+.header{margin-bottom:6px;}
+.header > svg:last-child{width:133px;height:70px;}
+.uc-item{flex-direction:row;gap:5px;justify-content:center;}
+.step h3{display:inline;margin-left:6px;vertical-align:middle;}
+.step h3 + p, .step h3 + ul{margin-top:2px;}
+.col-left,.col-right{gap:5px}
+.main{margin-bottom:6px;}
+.flow-section{margin-bottom:6px}
+.flow{padding:4px 20px;}
+.flow-step{flex-direction:row;gap:6px;justify-content:center}
+.flow-step span{text-align:left}
+.flow-step i{width:22px;height:22px;font-size:13px;flex-shrink:0}
+.flow-tagline{margin-top:2px}
+.bottom-card{padding:5px 14px;}
+.benefit{padding:1px 0;}
+.tip{padding:1px 0;}
+.uc-callout{max-width:380px;}
+.use-cases{padding:4px 18px;}
+.bottom-grid{gap:12px;}
+.tip{font-size:10.2px;}
+.main{gap:12px;}
+.step ul{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;row-gap:1px}
+.step ul li[style]{margin-top:0!important}
+.benefit-desc{font-size:10px;line-height:1.25}
+.step{padding:5px 12px;}
+.flow-title{margin-bottom:2px}
+.center{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:center;justify-items:center}
+.center .center-circle{grid-column:1 / -1;width:100px;height:100px}
+.center .connector-line{display:none}
+.center-circle .big{font-size:28px}
+.stat-pill{padding:3px 4px}
+.stat-pill .label{font-size:8.5px;line-height:1.15}
+.stat-pill .desc{font-size:8.5px;line-height:1.15}
+.col-right .step:last-child ul{grid-template-columns:1fr}
+
+.ig-grid{display:grid;gap:6px}
+.ico{background:#fff;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 2px 3px}
+.ico svg{width:46px;height:46px}
+.ico span{font-size:11px;color:var(--t2);margin-top:2px;text-align:center;line-height:1.1}
+.shape-row{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+.shape{background:#fff;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;padding:5px 2px 3px}
+.shape svg{width:48px;height:36px}
+.shape span{font-size:11px;color:var(--t2);margin-top:2px}
+.pal-cols{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+.pal-group{background:var(--bd);border:1px solid var(--line);border-radius:10px;padding:8px 14px;display:flex;flex-direction:column}
+.pal-list{flex:1;grid-auto-rows:1fr}
+.ig-wrap{flex:1;display:flex;flex-direction:column}
+.ig-wrap .ig-grid{flex:1;grid-auto-rows:1fr}
+.pal-group h4{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.pal-group h4 small{font-weight:400;color:var(--t3);text-transform:none;letter-spacing:0;margin-left:6px;font-size:10px}
+.pal-list{display:grid;gap:4px}
+.pal{display:grid;grid-template-columns:120px 1fr 34px;align-items:center;gap:8px}
+.pal .nm{font-size:12px;color:var(--t1);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pal .sw{display:flex;height:26px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.pal .sw i{flex:1}
+.pal .sw.grad{border-radius:4px}
+.cb{font-size:8.5px;font-weight:700;color:#fff;background:var(--acc2);border-radius:10px;padding:1px 0;text-align:center}
+.cb.off{background:transparent}
+.note{font-size:10.5px;color:var(--t2);line-height:1.35}
+.note strong{color:var(--t1)}
+</style>
+</head>
+<body>
+
+<!-- DOWNLOAD BUTTON -->
+<div id="dl-bar" style="position:fixed;top:10px;left:10px;z-index:9999;">
+  <button id="dl-btn" onclick="downloadPNG()" style="background:#2B6CB0;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    ⬇ Download PNG (1366×768)
+  </button>
+</div>
+<script>
+async function downloadPNG() {
+  const btn = document.getElementById('dl-btn');
+  const bar = document.getElementById('dl-bar');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  bar.style.display = 'none';
+  await new Promise(r => setTimeout(r, 300));
+  const el = document.getElementById('infographic');
+  const canvas = await html2canvas(el, {
+    width: 1366,
+    height: 768,
+    scale: 1,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#FAF9F5',
+    x: 0, y: 0
+  });
+  bar.style.display = '';
+  btn.textContent = '⬇ Download PNG (1366×768)';
+  btn.disabled = false;
+  const link = document.createElement('a');
+  link.download = 'word-cloud-color-palettes.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+
+<div id="infographic">
+<!-- HEADER -->
+<div class="header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 828 362" width="160" height="70" aria-label="TCViz">
+    <defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1F4E80"/><stop offset="0.55" stop-color="#2B6CB0"/><stop offset="1" stop-color="#3E9C5B"/>
+    </linearGradient></defs>
+    <g transform="translate(40,46)">
+      <rect x="22" y="20" width="150" height="150" rx="30" fill="none" stroke="url(#g)" stroke-width="11"/>
+      <g fill="url(#g)">
+        <rect x="42" y="110" width="20" height="58" rx="5"/><rect x="70" y="86" width="20" height="82" rx="5"/>
+        <rect x="98" y="62" width="20" height="106" rx="5"/><rect x="126" y="38" width="20" height="130" rx="5"/>
+      </g>
+    </g>
+    <text x="258" y="246" font-family="Poppins,sans-serif" font-weight="700" font-size="196" letter-spacing="-4">
+      <tspan fill="url(#g)">tc</tspan><tspan fill="#3D3929">viz</tspan>
+    </text>
+    <text x="264" y="306" font-family="Poppins,sans-serif" font-weight="500" font-size="31" letter-spacing="6.5" fill="#83827D">VISUALS TO POWER BI</text>
+  </svg>
+
+  <div class="header-title">
+    <h1>Word Cloud <span>by TCViz</span> · Color palettes</h1>
+    <p>32 palettes in three families — <strong>17 colour-blind safe</strong> — plus theme colours, fx and your own low and high colours.</p>
+  </div>
+  <svg width="190" height="100" viewBox="0 0 190 100" aria-hidden="true" font-family="Segoe UI,sans-serif" font-weight="700">
+    <text x="40" y="58" font-size="30" fill="#1E8449">excellent</text>
+    <text x="8" y="30" font-size="15" fill="#2B6CB0">service</text>
+    <text x="88" y="26" font-size="19" fill="#3E9C5B">fast</text>
+    <text x="138" y="22" font-size="12" fill="#C0392B">late</text>
+    <text x="10" y="82" font-size="18" fill="#C0392B">refund</text>
+    <text x="84" y="84" font-size="22" fill="#1F4E80">friendly</text>
+    <text x="40" y="97" font-size="11" fill="#83827D">price</text>
+    <text x="6" y="56" font-size="11" fill="#9BD3AE">easy</text>
+    <text x="150" y="96" font-size="10" fill="#E8A39B">slow</text>
+  </svg>
+</div>
+
+<div class="pal-cols" style="flex:1">
+  <div class="pal-group">
+    <h4>Categorical · 16<small>one colour per word — the same word keeps its colour when you filter · 4 colour-blind safe</small></h4>
+    <div class="pal-list" style="grid-template-columns:1fr 1fr;column-gap:16px"><div class="pal"><div class="nm">TCViz</div><div class="sw"><i style="background:#2B6CB0"></i><i style="background:#3E9C5B"></i><i style="background:#1F4E80"></i><i style="background:#D9A441"></i><i style="background:#4A9BC9"></i><i style="background:#6BAF7E"></i><i style="background:#8E5FC4"></i><i style="background:#C96442"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Okabe-Ito</div><div class="sw"><i style="background:#E69F00"></i><i style="background:#56B4E9"></i><i style="background:#009E73"></i><i style="background:#F0E442"></i><i style="background:#0072B2"></i><i style="background:#D55E00"></i><i style="background:#CC79A7"></i><i style="background:#000000"></i></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Tol Bright</div><div class="sw"><i style="background:#4477AA"></i><i style="background:#EE6677"></i><i style="background:#228833"></i><i style="background:#CCBB44"></i><i style="background:#66CCEE"></i><i style="background:#AA3377"></i><i style="background:#BBBBBB"></i></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Tol Muted</div><div class="sw"><i style="background:#332288"></i><i style="background:#88CCEE"></i><i style="background:#44AA99"></i><i style="background:#117733"></i><i style="background:#999933"></i><i style="background:#DDCC77"></i><i style="background:#CC6677"></i><i style="background:#882255"></i><i style="background:#AA4499"></i></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Tol Vibrant</div><div class="sw"><i style="background:#EE7733"></i><i style="background:#0077BB"></i><i style="background:#33BBEE"></i><i style="background:#EE3377"></i><i style="background:#CC3311"></i><i style="background:#009988"></i><i style="background:#BBBBBB"></i></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Tableau 10</div><div class="sw"><i style="background:#4E79A7"></i><i style="background:#F28E2B"></i><i style="background:#E15759"></i><i style="background:#76B7B2"></i><i style="background:#59A14F"></i><i style="background:#EDC948"></i><i style="background:#B07AA1"></i><i style="background:#FF9DA7"></i><i style="background:#9C755F"></i><i style="background:#BAB0AC"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Vivid</div><div class="sw"><i style="background:#E58606"></i><i style="background:#5D69B1"></i><i style="background:#52BCA3"></i><i style="background:#99C945"></i><i style="background:#CC61B0"></i><i style="background:#24796C"></i><i style="background:#DAA51B"></i><i style="background:#2F8AC4"></i><i style="background:#764E9F"></i><i style="background:#ED645A"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Pastel</div><div class="sw"><i style="background:#66C5CC"></i><i style="background:#F6CF71"></i><i style="background:#F89C74"></i><i style="background:#DCB0F2"></i><i style="background:#87C55F"></i><i style="background:#9EB9F3"></i><i style="background:#FE88B1"></i><i style="background:#C9DB74"></i><i style="background:#8BE0A4"></i><i style="background:#B497E7"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Earth</div><div class="sw"><i style="background:#7F4F24"></i><i style="background:#936639"></i><i style="background:#A68A64"></i><i style="background:#B6AD90"></i><i style="background:#656D4A"></i><i style="background:#414833"></i><i style="background:#333D29"></i><i style="background:#C2C5AA"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Ocean</div><div class="sw"><i style="background:#03045E"></i><i style="background:#023E8A"></i><i style="background:#0077B6"></i><i style="background:#0096C7"></i><i style="background:#00B4D8"></i><i style="background:#48CAE4"></i><i style="background:#90E0EF"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Sunset</div><div class="sw"><i style="background:#F72585"></i><i style="background:#B5179E"></i><i style="background:#7209B7"></i><i style="background:#560BAD"></i><i style="background:#3A0CA3"></i><i style="background:#4361EE"></i><i style="background:#4CC9F0"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Forest</div><div class="sw"><i style="background:#081C15"></i><i style="background:#1B4332"></i><i style="background:#2D6A4F"></i><i style="background:#40916C"></i><i style="background:#52B788"></i><i style="background:#74C69D"></i><i style="background:#95D5B2"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Candy</div><div class="sw"><i style="background:#FF595E"></i><i style="background:#FF924C"></i><i style="background:#FFCA3A"></i><i style="background:#8AC926"></i><i style="background:#1982C4"></i><i style="background:#6A4C93"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Corporate</div><div class="sw"><i style="background:#1F3A5F"></i><i style="background:#3B6A9A"></i><i style="background:#5C8DB8"></i><i style="background:#8FB4D6"></i><i style="background:#4F5D75"></i><i style="background:#2D3142"></i><i style="background:#BFC0C0"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Neon</div><div class="sw"><i style="background:#FF00A0"></i><i style="background:#00E5FF"></i><i style="background:#C6FF00"></i><i style="background:#FFEA00"></i><i style="background:#7C4DFF"></i><i style="background:#FF3D00"></i></div><div class="cb off"></div></div><div class="pal"><div class="nm">Retro</div><div class="sw"><i style="background:#D1495B"></i><i style="background:#EDAE49"></i><i style="background:#00798C"></i><i style="background:#30638E"></i><i style="background:#003D5B"></i><i style="background:#8F2D56"></i></div><div class="cb off"></div></div></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div class="pal-group" style="flex:5">
+      <h4>Sequential · 10<small>little → a lot · 8 colour-blind safe</small></h4>
+      <div class="pal-list" style="grid-template-columns:1fr 1fr;column-gap:16px"><div class="pal"><div class="nm">Blues</div><div class="sw grad" style="background:linear-gradient(90deg,#C6DBEF,#6BAED6,#2171B5,#08306B)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Greens</div><div class="sw grad" style="background:linear-gradient(90deg,#C7E9C0,#74C476,#238B45,#00441B)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Teal to blue</div><div class="sw grad" style="background:linear-gradient(90deg,#A8DDB5,#4EB3D3,#2B8CBE,#084081)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Viridis</div><div class="sw grad" style="background:linear-gradient(90deg,#440154,#3B528B,#21918C,#5DC863,#FDE725)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Cividis</div><div class="sw grad" style="background:linear-gradient(90deg,#00224E,#434E6C,#7D7C78,#BCAF6F,#FEE838)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Magma</div><div class="sw grad" style="background:linear-gradient(90deg,#000004,#51127C,#B73779,#FC8961,#FCFDBF)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Plasma</div><div class="sw grad" style="background:linear-gradient(90deg,#0D0887,#7E03A8,#CC4778,#F89540,#F0F921)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Ink (greys)</div><div class="sw grad" style="background:linear-gradient(90deg,#BDBDBD,#737373,#252525)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Warm</div><div class="sw grad" style="background:linear-gradient(90deg,#FDD49E,#FC8D59,#D7301F,#7F0000)"></div><div class="cb off"></div></div><div class="pal"><div class="nm">Custom</div><div class="sw grad" style="background:linear-gradient(90deg,#9DB8D9,#1F4E80)"></div><div class="cb off"></div></div></div>
+    </div>
+    <div class="pal-group" style="flex:3">
+      <h4>Diverging · 6<small>negative · neutral · positive · 5 colour-blind safe</small></h4>
+      <div class="pal-list" style="grid-template-columns:1fr 1fr;column-gap:16px"><div class="pal"><div class="nm">Sentiment</div><div class="sw grad" style="background:linear-gradient(90deg,#C0392B,#E8A39B,#BDBDBD,#9BD3AE,#1E8449)"></div><div class="cb off"></div></div><div class="pal"><div class="nm">Blue - orange</div><div class="sw grad" style="background:linear-gradient(90deg,#2166AC,#92C5DE,#E0E0E0,#F4A582,#B2182B)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Tol Sunset</div><div class="sw grad" style="background:linear-gradient(90deg,#364B9A,#6EA6CD,#EAECCC,#FDB366,#A50026)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Purple - green</div><div class="sw grad" style="background:linear-gradient(90deg,#762A83,#C2A5CF,#F7F7F7,#A6DBA0,#1B7837)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Brown - teal</div><div class="sw grad" style="background:linear-gradient(90deg,#8C510A,#DFC27D,#F5F5F5,#80CDC1,#01665E)"></div><div class="cb">CB</div></div><div class="pal"><div class="nm">Pink - green</div><div class="sw grad" style="background:linear-gradient(90deg,#C51B7D,#F1B6DA,#F7F7F7,#B8E186,#4D9221)"></div><div class="cb">CB</div></div></div>
+    </div>
+  </div>
+</div>
+<div class="bottom-grid" style="flex:0 0 auto;margin-top:8px">
+  <div class="bottom-card">
+    <div class="section-title">Which palette for which colour mode</div>
+    <div class="tip"><i class="ti ti-palette"></i><span><strong style="color:#3D3929">Palette</strong> — categorical: each word its own colour.</span></div>
+    <div class="tip"><i class="ti ti-arrows-horizontal"></i><span><strong style="color:#3D3929">Gradient by size / by Color value</strong> — sequential; a categorical palette uses Low → High color.</span></div>
+    <div class="tip"><i class="ti ti-mood-happy"></i><span><strong style="color:#3D3929">Sentiment</strong> — diverging; any other palette falls back to red · grey · green.</span></div>
+  </div>
+  <div class="bottom-card">
+    <div class="section-title">Colour-blind safe (CB)</div>
+    <div class="tip"><i class="ti ti-eye"></i><span>17 of 32 palettes are safe for deuteranopia and protanopia, according to their source.</span></div>
+    <div class="tip"><i class="ti ti-book"></i><span>Okabe &amp; Ito (2008), Paul Tol (2021), Viridis and Cividis (matplotlib), ColorBrewer.</span></div>
+    <div class="tip"><i class="ti ti-contrast"></i><span>With a Windows high-contrast theme the visual uses the system colours instead.</span></div>
+  </div>
+  <div class="bottom-card">
+    <div class="section-title">Beyond the palettes</div>
+    <div class="tip"><i class="ti ti-brush"></i><span><strong style="color:#3D3929">Theme colors</strong> — the colours of your report theme.</span></div>
+    <div class="tip"><i class="ti ti-math-function"></i><span><strong style="color:#3D3929">fx</strong> on Word color — rules or a field value, per word.</span></div>
+    <div class="tip"><i class="ti ti-adjustments"></i><span><strong style="color:#3D3929">Neutral value</strong> — the score Sentiment paints grey (5.5 on 1–10).</span></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div style="display:flex;align-items:center;gap:10px">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 828 362" width="70" height="30" aria-label="TCViz">
+      <defs><linearGradient id="gf" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#1F4E80"/><stop offset="0.55" stop-color="#2B6CB0"/><stop offset="1" stop-color="#3E9C5B"/>
+      </linearGradient></defs>
+      <g transform="translate(40,46)">
+        <rect x="22" y="20" width="150" height="150" rx="30" fill="none" stroke="url(#gf)" stroke-width="11"/>
+        <g fill="url(#gf)">
+          <rect x="42" y="110" width="20" height="58" rx="5"/><rect x="70" y="86" width="20" height="82" rx="5"/>
+          <rect x="98" y="62" width="20" height="106" rx="5"/><rect x="126" y="38" width="20" height="130" rx="5"/>
+        </g>
+      </g>
+      <text x="258" y="246" font-family="Poppins,sans-serif" font-weight="700" font-size="196" letter-spacing="-4">
+        <tspan fill="url(#gf)">tc</tspan><tspan fill="#3D3929">viz</tspan>
+      </text>
+      <text x="264" y="306" font-family="Poppins,sans-serif" font-weight="500" font-size="31" letter-spacing="6.5" fill="#83827D">VISUALS TO POWER BI</text>
+    </svg>
+    <span style="color:#83827D;font-size:11px">Word Cloud by TCViz 1.0 · Color palettes</span>
+  </div>
+  <div class="footer-links">
+    <a href="support.html">Support</a>
+    <a href="privacy.html">Privacy policy</a>
+    <a href="terms.html">Terms of use</a>
+    <a href="https://github.com/tinocallarisa-web/word-cloud">GitHub</a>
+  </div>
+</div>
+
+</div><!-- /#infographic -->
+<div id="fit-check" hidden></div>
+<script>
+(function () {
+  function check() {
+    var el = document.getElementById('infographic');
+    var h = el.scrollHeight, b = document.getElementById('fit-check');
+    if (h > 768) { b.textContent = 'OVERFLOW: ' + (h - 768) + 'px'; b.hidden = false; document.title = 'OVERFLOW'; }
+    else { b.hidden = true; document.title = 'FIT'; }
+  }
+  window.addEventListener('load', function () {
+    var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    ready.then(function () { setTimeout(check, 100); });
+  });
+})();
+</script>
+</body>
+</html>
