@@ -2,7 +2,6 @@ node_modules/
 dist/
 .tmp/
 webpack.statistics.*.html
-package-lock.json
 *.pbiviz
 SPEC.md
 _releases/
